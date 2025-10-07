@@ -1,0 +1,109 @@
+/* ======= Global Layout ======= */
+body {
+  background: linear-gradient(135deg, #e0f2ff 0%, #b3e5fc 50%, #81d4fa 100%);
+  font-family: 'Prompt', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: #0d47a1;
+}
+
+/* ======= Card Style ======= */
+.auth-card {
+  background-color: #ffffff;
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.auth-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+/* ======= Header ======= */
+.auth-card h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #01579b;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* ======= Input Fields ======= */
+.auth-input {
+  width: 100%;
+  border: 1.5px solid #bbdefb;
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  outline: none;
+  transition: all 0.25s ease;
+  background-color: #f8fbff;
+}
+
+.auth-input:focus {
+  border-color: #2196f3;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
+}
+
+/* ======= Buttons ======= */
+.auth-btn {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  color: #ffffff;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-blue {
+  background: linear-gradient(90deg, #2196f3, #1e88e5);
+}
+
+.btn-blue:hover {
+  background: linear-gradient(90deg, #1976d2, #1565c0);
+}
+
+.btn-green {
+  background: linear-gradient(90deg, #43a047, #388e3c);
+}
+
+.btn-green:hover {
+  background: linear-gradient(90deg, #2e7d32, #1b5e20);
+}
+
+/* ======= Links & Messages ======= */
+.auth-link {
+  color: #1976d2;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+  color: #0d47a1;
+}
+
+#msg {
+  text-align: center;
+  margin-top: 1rem;
+  color: #e53935;
+}
+
+/* ======= Animation ======= */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.auth-card {
+  animation: fadeIn 0.6s ease;
+}

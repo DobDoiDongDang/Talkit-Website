@@ -4,25 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ยืนยันตัวตน</title>
+  <link rel="stylesheet" href="/auth-style.css">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-    <h1 class="text-2xl font-bold text-center mb-6">ยืนยันตัวตน</h1>
+<body>
+  <div class="auth-card">
+    <h1>ยืนยันตัวตน</h1>
 
     <form id="confirmForm" class="space-y-4">
-      <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="w-full border p-2 rounded-lg" />
-      <input type="text" id="code" placeholder="รหัสยืนยันจากอีเมล" class="w-full border p-2 rounded-lg" />
-      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-        ยืนยัน
-      </button>
+      <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="auth-input">
+      <input type="text" id="code" placeholder="รหัสยืนยันจากอีเมล" class="auth-input">
+      <button type="submit" class="auth-btn btn-green">ยืนยัน</button>
     </form>
 
     <div class="text-center mt-4">
-      <a href="/auth" class="text-blue-600 hover:underline">กลับไปหน้าเข้าสู่ระบบ</a>
+      <a href="/auth" class="auth-link">กลับไปหน้าเข้าสู่ระบบ</a>
     </div>
-
-    <p id="msg" class="text-center text-red-500 mt-3"></p>
+    <p id="msg"></p>
   </div>
 
   <script>
@@ -42,7 +40,7 @@
       const data = await res.json();
       if (data.success) {
         alert('ยืนยันสำเร็จ! กรุณาเข้าสู่ระบบใหม่');
-        window.location.href = '/';
+        window.location.href = '/auth';
       } else {
         document.getElementById('msg').textContent = data.message;
       }
@@ -50,3 +48,4 @@
   </script>
 </body>
 </html>
+

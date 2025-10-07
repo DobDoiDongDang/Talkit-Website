@@ -4,26 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>รีเซ็ตรหัสผ่าน</title>
+  <link rel="stylesheet" href="/auth-style.css">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-    <h1 class="text-2xl font-bold text-center mb-6">รีเซ็ตรหัสผ่าน</h1>
+<body>
+  <div class="auth-card">
+    <h1>รีเซ็ตรหัสผ่าน</h1>
 
     <form id="resetForm" class="space-y-4">
-      <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="w-full border p-2 rounded-lg" />
-      <input type="text" id="code" placeholder="รหัสยืนยันจากอีเมล" class="w-full border p-2 rounded-lg" />
-      <input type="password" id="newPassword" placeholder="รหัสผ่านใหม่" class="w-full border p-2 rounded-lg" />
-      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-        ตั้งรหัสใหม่
-      </button>
+      <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="auth-input">
+      <input type="text" id="code" placeholder="รหัสยืนยันจากอีเมล" class="auth-input">
+      <input type="password" id="newPassword" placeholder="รหัสผ่านใหม่" class="auth-input">
+      <button type="submit" class="auth-btn btn-green">ตั้งรหัสใหม่</button>
     </form>
 
     <div class="text-center mt-4">
-      <a href="/auth" class="text-blue-600 hover:underline">กลับไปหน้าเข้าสู่ระบบ</a>
+      <a href="/auth" class="auth-link">กลับไปหน้าเข้าสู่ระบบ</a>
     </div>
-
-    <p id="msg" class="text-center text-red-500 mt-3"></p>
+    <p id="msg"></p>
   </div>
 
   <script>

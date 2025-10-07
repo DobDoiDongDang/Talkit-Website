@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Hono } from "hono";
 import { readFile } from "fs/promises";
 import * as path from "path";
@@ -10,7 +11,18 @@ import {
   ConfirmForgotPasswordCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 
+// ✅ [แก้] import serveStatic จาก path ใหม่
+import { serveStatic } from "@hono/node-server/serve-static";
+
 const authRoute = new Hono();
+
+// ✅ [เพิ่ม] เสิร์ฟไฟล์ static (เช่น auth-style.css) จาก src/pages
+authRoute.use(
+  "/",
+  serveStatic({
+    root: path.join(process.cwd(), "src/pages"),
+  })
+);
 
 // ตั้งค่า Cognito
 const client = new CognitoIdentityProviderClient({

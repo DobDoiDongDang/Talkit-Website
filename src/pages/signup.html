@@ -4,26 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>สมัครสมาชิก</title>
+  <link rel="stylesheet" href="/auth-style.css">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-    <h1 class="text-2xl font-bold text-center mb-6">สมัครสมาชิก</h1>
+<body>
+  <div class="auth-card">
+    <h1>สมัครสมาชิก</h1>
 
     <form id="signupForm" class="space-y-4">
-      <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="w-full border p-2 rounded-lg" required />
-      <input type="email" id="email" placeholder="อีเมล" class="w-full border p-2 rounded-lg" required />
-      <input type="password" id="password" placeholder="รหัสผ่าน" class="w-full border p-2 rounded-lg" required />
-      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-        สมัครสมาชิก
-      </button>
+      <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="auth-input" required>
+      <input type="email" id="email" placeholder="อีเมล" class="auth-input" required>
+      <input type="password" id="password" placeholder="รหัสผ่าน" class="auth-input" required>
+      <button type="submit" class="auth-btn btn-green">สมัครสมาชิก</button>
     </form>
 
     <div class="text-center mt-4">
-      <a href="/auth" class="text-blue-600 hover:underline">กลับไปหน้าเข้าสู่ระบบ</a>
+      <a href="/auth" class="auth-link">กลับไปหน้าเข้าสู่ระบบ</a>
     </div>
-
-    <p id="msg" class="text-center text-red-500 mt-3"></p>
+    <p id="msg"></p>
   </div>
 
   <script>
@@ -42,7 +40,7 @@
 
       if (data.success) {
         alert('สมัครสมาชิกสำเร็จ กรุณายืนยันบัญชีจากอีเมลของคุณ')
-        window.location.href = '/auth/confirm.html?user=' + username
+        window.location.href = '/auth/confirm?user=' + username
       } else {
         document.getElementById('msg').textContent = data.message
       }
@@ -50,3 +48,4 @@
   </script>
 </body>
 </html>
+
