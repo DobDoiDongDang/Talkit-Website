@@ -42,7 +42,7 @@
       const data = await res.json();
       if (data.success) {
         alert('รีเซ็ตรหัสผ่านสำเร็จ');
-        window.location.href = '/';
+        window.location.href = '/auth';
       } else {
         document.getElementById('msg').textContent = data.message;
       }

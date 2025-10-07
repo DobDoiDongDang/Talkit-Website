@@ -34,7 +34,7 @@
       const data = await res.json();
       if (data.success) {
         alert('ส่งรหัสรีเซ็ตไปที่อีเมลของคุณแล้ว');
-        window.location.href = '/auth/reset.html?user=' + username;
+        window.location.href = '/auth/reset?user=' + username;
       } else {
         document.getElementById('msg').textContent = data.message;
       }

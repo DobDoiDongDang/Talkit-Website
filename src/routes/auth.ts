@@ -151,4 +151,29 @@ authRoute.post("/forgot/confirm", async (c) => {
   }
 });
 
+// ----------------------------------------------------
+// 🔹 หน้ารีเซ็ตรหัสผ่าน
+// ----------------------------------------------------
+authRoute.get("/reset", async (c) => {
+  return c.html(await loadPage("reset.html"));
+});
+
+authRoute.post("/reset", async (c) => {
+  const { username, code, newPassword } = await c.req.json();
+
+  try {
+    const command = new ConfirmForgotPasswordCommand({
+      ClientId: CLIENT_ID,
+      Username: username,
+      ConfirmationCode: code,
+      Password: newPassword,
+    });
+    await client.send(command);
+    return c.json({ success: true, redirect: "/", message: "รีเซ็ตรหัสผ่านสำเร็จ" });
+  } catch (err: any) {
+    return c.json({ success: false, message: err.message });
+  }
+});
+
+
 export { authRoute };
