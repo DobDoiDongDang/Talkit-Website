@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>รีเซ็ตรหัสผ่าน</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+    <h1 class="text-2xl font-bold text-center mb-6">รีเซ็ตรหัสผ่าน</h1>
+
+    <form id="resetForm" class="space-y-4">
+      <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="w-full border p-2 rounded-lg" />
+      <input type="text" id="code" placeholder="รหัสยืนยันจากอีเมล" class="w-full border p-2 rounded-lg" />
+      <input type="password" id="newPassword" placeholder="รหัสผ่านใหม่" class="w-full border p-2 rounded-lg" />
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
+        ตั้งรหัสใหม่
+      </button>
+    </form>
+
+    <div class="text-center mt-4">
+      <a href="/auth" class="text-blue-600 hover:underline">กลับไปหน้าเข้าสู่ระบบ</a>
+    </div>
+
+    <p id="msg" class="text-center text-red-500 mt-3"></p>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const userParam = params.get('user');
+    if (userParam) document.getElementById('username').value = userParam;
+
+    document.getElementById('resetForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const code = document.getElementById('code').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const res = await fetch('/auth/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, code, newPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('รีเซ็ตรหัสผ่านสำเร็จ');
+        window.location.href = '/';
+      } else {
+        document.getElementById('msg').textContent = data.message;
+      }
+    });
+  </script>
+</body>
+</html>
