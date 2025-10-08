@@ -35,8 +35,8 @@
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();
-      if (data.unconfirmed) {
-        window.location.href = '/auth/confirm.html?user=' + username;
+      if (data.redirect && data.redirect.includes('/confirm')) {
+        window.location.href = '/auth/confirm?user=' + username;
       } else if (data.success) {
         alert('เข้าสู่ระบบสำเร็จ');
       } else {

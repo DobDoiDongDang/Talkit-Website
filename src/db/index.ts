@@ -3,10 +3,13 @@ import * as schema from './schema.js';
 import { Pool } from 'pg';
 import 'dotenv/config'; // โหลดตัวแปรจาก .env
 
+
 /**
  * ฟังก์ชันสำหรับเริ่มต้น Drizzle Database Client
  * ใช้เพื่อรัน Query ในแอปพลิเคชันของเรา
  */
+
+
 
 // ตรวจสอบว่ามีการกำหนด DATABASE_URL ใน environment variable หรือไม่
 if (!process.env.DATABASE_URL) {
@@ -14,10 +17,10 @@ if (!process.env.DATABASE_URL) {
 }
 
 // 1. สร้าง Pool Connection จาก pg driver
+const isProduction = process.env.NODE_ENV === 'production';
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // ตั้งค่า SSL หากใช้ฐานข้อมูลบน Cloud เช่น AWS RDS
-  // ssl: true, 
+  ssl: isProduction ? { rejectUnauthorized: true } : false,
 });
 
 // 2. สร้าง Drizzle Client โดยผูกกับ Connection Pool และ Schema

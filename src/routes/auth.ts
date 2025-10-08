@@ -9,7 +9,12 @@ import {
   InitiateAuthCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
+  GetUserCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
+import { db } from '../db/index.js';
+import { users } from '../db/schema.js';
+import { eq } from "drizzle-orm";
+import { AdminGetUserCommand } from "@aws-sdk/client-cognito-identity-provider";
 
 // ✅ [แก้] import serveStatic จาก path ใหม่
 import { serveStatic } from "@hono/node-server/serve-static";
@@ -50,20 +55,46 @@ authRoute.post("/login", async (c) => {
     const command = new InitiateAuthCommand({
       AuthFlow: "USER_PASSWORD_AUTH",
       ClientId: CLIENT_ID,
-      AuthParameters: {
-        USERNAME: username,
-        PASSWORD: password,
-      },
+      AuthParameters: { USERNAME: username, PASSWORD: password },
     });
+
     const res = await client.send(command);
-    return c.json({ success: true, message: "เข้าสู่ระบบสำเร็จ", data: res.AuthenticationResult });
+    const idToken = res.AuthenticationResult?.IdToken;
+    const accessToken = res.AuthenticationResult?.AccessToken;
+
+    if (!idToken || !accessToken) throw new Error("ไม่พบ Token");
+
+    // ดึงข้อมูล user จาก accessToken
+    const userRes = await client.send(new GetUserCommand({ AccessToken: accessToken }));
+    const emailAttr = userRes.UserAttributes?.find(attr => attr.Name === "email");
+    const email = emailAttr?.Value;
+    if (!email) throw new Error("ไม่พบอีเมลใน Cognito");
+
+    // ตรวจสอบว่ามี user ใน DB หรือยัง
+  const userInDb = await db.select().from(users).where(eq(users.email, email));
+    if (!userInDb.length) {
+      await db.insert(users).values({
+        email,
+        displayName: username,
+      });
+    }
+
+  // ✅ เก็บ AccessToken ใน Cookie (HTTP-only)
+  c.header("Set-Cookie", `token=${accessToken}; HttpOnly; Path=/; Max-Age=3600; Secure`);
+
+    return c.json({
+      success: true,
+      redirect: "/",
+      message: "เข้าสู่ระบบสำเร็จ",
+    });
   } catch (err: any) {
     if (err.name === "UserNotConfirmedException") {
-      return c.json({ success: false, redirect: "/confirm", message: "บัญชียังไม่ยืนยัน โปรดยืนยันก่อนเข้าสู่ระบบ" });
+      return c.json({ success: false, redirect: "/confirm", message: "บัญชียังไม่ยืนยัน" });
     }
     return c.json({ success: false, message: err.message });
   }
 });
+
 
 // ----------------------------------------------------
 // 🔹 สมัครสมาชิก
@@ -106,7 +137,23 @@ authRoute.post("/confirm", async (c) => {
       ConfirmationCode: code,
     });
     await client.send(command);
-    return c.json({ success: true, redirect: "/", message: "ยืนยันสำเร็จแล้ว สามารถเข้าสู่ระบบได้เลย" });
+
+    // ดึง email จาก Cognito หลังยืนยัน
+    const adminGetUser = new AdminGetUserCommand({
+      UserPoolId: process.env.COGNITO_USER_POOL_ID!,
+      Username: username,
+    });
+    const userRes = await client.send(adminGetUser);
+    const emailAttr = userRes.UserAttributes?.find(attr => attr.Name === "email");
+    const email = emailAttr?.Value;
+    if (!email) throw new Error("ไม่พบอีเมลใน Cognito");
+
+    // เพิ่ม user ลง database หลังยืนยันสำเร็จ
+    await db.insert(users).values({
+      email,
+      displayName: username,
+    });
+    return c.json({ success: true, redirect: "/home", message: "ยืนยันสำเร็จแล้ว กำลังเข้าสู่ระบบ..." });
   } catch (err: any) {
     return c.json({ success: false, message: err.message });
   }
