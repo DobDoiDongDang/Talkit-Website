@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สร้างโพสต์ใหม่</title>
+    <link rel="stylesheet" href="../../public/post.css"> 
+    <!-- ถ้าเพิ่มrouteแล้วให้แก้cssเป็น /post.css อันข้างบนไว้ใช้ดูในshow preview แบบไม่รัน npm -->
+</head>
+
+<body>
+    <div class="container"> <!-- Sidebar -->
+        <aside class="sidebar collapsed" id="sidebar">
+            <div class="profile"> <img src="../../public/user.png" alt="User Avatar" class="avatar">
+                <h2 class="username">User_1</h2>
+                <p class="role">Normal User</p>
+            </div>
+            <div class="menu">
+                <p class="menu-title">หมวดหมู่</p> <input type="text" class="search" placeholder="ค้นหา">
+                <ul class="category-list">
+                    <li class="active">ปัญหาโค้ด <span class="star">★</span></li>
+                    <li>ปัญหาชีวิต <span class="star">☆</span></li>
+                    <li>ปัญหาทางสังคม <span class="star">☆</span></li>
+                </ul> <button class="sandbox-btn">SandBox</button>
+            </div>
+        </aside>
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="post-box">
+                <div class="post-header">
+                    <div class="user-info"> <img src="../../public/user.png" alt="User Avatar" class="post-avatar">
+                        <div>
+                            <h3>John Talkit</h3>
+                            <p class="category">ปัญหาโค้ด 🐍</p>
+                        </div>
+                    </div> <button class="post-btn">โพสต์</button>
+                </div>
+                <textarea class="post-text">Why it’s doesn’t stop?</textarea>
+                <div class="code-block">
+                    <div class="code-header">Python</div> <textarea
+                        class="code-content">while True:    print("break pls i beg you")</textarea>
+                    <div class="code-footer"> <span>Result:</span> <button class="run-btn">Run</button> </div>
+                </div>
+                <div class="actions"> <button class="img-btn">แนบรูปภาพ</button> <button
+                        class="code-btn">เพิ่มโค้ด</button> <button class="cancel-btn">cancel</button> </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

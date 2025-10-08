@@ -1,0 +1,333 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Prompt', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #e0f2ff 0%, #b3e5fc 50%, #81d4fa 100%);
+  color: #003366;
+  display: flex;
+  height: 100vh;
+}
+
+/* ======================== */
+/* Container หลัก */
+/* ======================== */
+.container {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ======================== */
+/* Sidebar */
+/* ======================== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 240px;
+  background: linear-gradient(180deg, #0050d4, #007bff);
+  color: #fff;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 3px 0 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.profile {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+}
+
+.username {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.role {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.menu-title {
+  margin: 20px 0 10px;
+  font-weight: 600;
+  text-align: left;
+  width: 100%;
+}
+
+.search {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  margin-bottom: 1rem;
+  color: #003366;
+}
+
+.category-list {
+  list-style: none;
+  width: 100%;
+}
+
+.category-list li {
+  background: rgba(255, 255, 255, 0.15);
+  margin: 6px 0;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.category-list li:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(3px);
+}
+
+.category-list li.active {
+  background: rgba(255, 255, 255, 0.35);
+  font-weight: bold;
+}
+
+.star {
+  color: gold;
+}
+
+/* ปุ่ม Sandbox */
+.sandbox-btn {
+  margin-top: auto;
+  background: #fff;
+  color: #0050d4;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+.sandbox-btn:hover {
+  background: #f0f4ff;
+  transform: scale(1.05);
+}
+
+/* ======================== */
+/* Main Content */
+/* ======================== */
+.main-content {
+  margin-left: 240px;
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  transition: margin-left 0.3s ease;
+}
+
+.toggle-btn {
+  background: #0050d4;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  box-shadow: 0 3px 8px rgba(0, 80, 212, 0.3);
+}
+
+.toggle-btn:hover {
+  background: #0040b8;
+}
+
+/* ======================== */
+/* กล่องโพสต์ */
+/* ======================== */
+.post-box {
+  background: #ffffff;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 91, 255, 0.15);
+  margin-bottom: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.post-box:hover {
+  /* transform: translateY(-3px); */
+  box-shadow: 0 6px 20px rgba(0, 91, 255, 0.25);
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #007bff;
+}
+
+.post-btn {
+  background: linear-gradient(90deg, #0050d4, #007bff);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.post-btn:hover {
+  background: linear-gradient(90deg, #0040b8, #006aff);
+}
+
+/* ======================== */
+/* กล่องข้อความ / กล่องโค้ด */
+/* ======================== */
+.post-text {
+  width: 100%;
+  height: 120px;
+  border: 2px solid #007bff;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.post-text:focus {
+  box-shadow: 0 0 5px #007bff;
+}
+
+.code-block {
+  border: 1px solid #007bff;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  overflow: hidden;
+}
+
+.code-header {
+  background: #0050d4;
+  color: white;
+  padding: 8px 12px;
+  font-weight: 600;
+}
+
+.code-content {
+  width: 100%;
+  min-height: 100px;
+  border: none;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+}
+
+.code-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #e3f2fd;
+  padding: 8px 12px;
+}
+
+.run-btn {
+  background: linear-gradient(90deg, #032496, #0050d4);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.run-btn:hover {
+  background: #002080;
+}
+
+/* ======================== */
+/* ปุ่มเพิ่มเติม */
+/* ======================== */
+.actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.img-btn,
+.code-btn {
+  background: #4fc3f7;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.img-btn:hover,
+.code-btn:hover {
+  background: #29b6f6;
+}
+
+.cancel-btn {
+  margin-left: auto;
+  background: #dddfe6;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.cancel-btn:hover {
+  background: #ddd6d6;
+}
+
+/* ======================== */
+/* Responsive */
+/* ======================== */
+@media (max-width: 768px) {
+  .sidebar {
+    position: relative;
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 1rem;
+    height: auto;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+  }
+}
