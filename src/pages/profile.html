@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรไฟล์ผู้ใช้</title>
+    <link rel="stylesheet" href="../../public/profile.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="profile">
+                <img src="../../public/user.png" alt="User Avatar" class="avatar">
+                <h2>User_1</h2>
+            </div>
+            <div class="menu">
+                <p class="menu-title">หมวดหมู่</p>
+                <input type="text" placeholder="ค้นหา" class="search-box">
+                <ul class="category-list">
+                    <li class="active">ปัญหาโค้ด</li>
+                    <li>ปัญหาชีวิต</li>
+                    <li>ปัญหาสังคม</li>
+                    <li>หาเพื่อนกินข้าว</li>
+                </ul>
+            </div>
+            <button class="sandbox-btn">SandBox</button>
+        </aside>
+
+        <!-- Main Content: Profile -->
+        <main class="main-content">
+            <div class="profile-card">
+                <div class="left-section">
+                    <div class="avatar-section">
+                        <img src="../../public/user.png" alt="Avatar" class="avatar" id="avatarPreview">
+                        <label for="avatar" class="upload-btn">อัพโหลดรูป</label>
+                        <input type="file" id="avatar" accept="image/*" style="display: none;">
+                    </div>
+                    <div class="info-group">
+                        <label>ชื่อผู้ใช้:</label>
+                        <input type="text" id="username" disabled value="username123">
+                        <label>อีเมล:</label>
+                        <input type="email" id="email" disabled value="user@example.com">
+                    </div>
+                </div>
+
+                <div class="right-section">
+                    <form id="profileForm">
+                        <label>รหัสผ่านปัจจุบัน:</label>
+                        <input type="password" id="currentPassword">
+                        <label>รหัสผ่านใหม่:</label>
+                        <input type="password" id="newPassword">
+                        <label>ยืนยันรหัสผ่านใหม่:</label>
+                        <input type="password" id="confirmPassword">
+                        <button type="submit" class="save-btn">บันทึกแก้ไข</button>
+                    </form>
+                    <button class="logout-btn" id="logoutBtn">ออกจากระบบ</button>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

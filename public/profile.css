@@ -1,0 +1,246 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Prompt', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #e0f2ff 0%, #b3e5fc 50%, #81d4fa 100%);
+  color: #003366;
+  display: flex;
+  height: 100vh;
+}
+
+/* Container */
+.container {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ======================== */
+/* Sidebar */
+.sidebar {
+  width: 270px;
+  background: linear-gradient(180deg, #0050d4, #007bff);
+  color: #fff;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 3px 0 10px rgba(0,0,0,0.2);
+}
+
+.profile {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.sidebar .avatar {
+  width: 80px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+}
+
+.profile h2 {
+  margin-top: 0.7rem;
+  font-weight: 600;
+}
+
+.menu-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.search-box {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  margin-bottom: 1rem;
+}
+
+.category-list {
+  list-style: none;
+  width: 100%;
+}
+
+.category-list li {
+  background: rgba(255, 255, 255, 0.1);
+  margin: 6px 0;
+  padding: 10px;
+  border-radius: 8px;
+  transition: background 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+
+.category-list li:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateX(3px);
+}
+
+.category-list li.active {
+  background: rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+}
+
+.sandbox-btn {
+  margin-top: auto;
+  background: #fff;
+  color: #0050d4;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sandbox-btn:hover {
+  background: #f1f4ff;
+  transform: scale(1.05);
+}
+
+/* ======================== */
+/* Main Content: Profile */
+.main-content {
+  flex: 1;
+  padding: 2rem 8rem;
+  overflow-y: auto;
+}
+
+.profile-card {
+  display: flex;
+  gap: 3rem;
+  background: #ffffff;
+  border-radius: 25px;
+  padding: 2rem 3rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.left-section, .right-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.avatar-section {
+  display: flex;
+  flex-direction: column; /* วางเป็นแนวตั้ง */
+  align-items: center;    /* กึ่งกลางแนวนอน */
+  justify-content: center; /* กึ่งกลางแนวตั้ง ถ้าต้องการ */
+  gap: 0.5rem;            /* เว้นระยะระหว่าง avatar กับปุ่ม */
+}
+
+.avatar-section .avatar {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 4px solid #007bff;
+  object-fit: cover;
+}
+
+/* ปุ่ม choose file */
+.avatar-section .upload-btn {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 25px;
+  background: linear-gradient(90deg, #0050d4, #007bff);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.avatar-section .upload-btn:hover {
+  background: linear-gradient(90deg, #0040b8, #006aff);
+}
+
+/* ซ่อน input จริง */
+.avatar-section input[type="file"] {
+  display: none;
+}
+
+.info-group label, .right-section label {
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.info-group input[type="text"],
+.info-group input[type="email"] {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  outline: none;
+  width: 100%;
+  background: #e9ecef;
+  cursor: not-allowed;
+}
+
+.right-section input[type="password"] {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  outline: none;
+  width: 100%;
+}
+
+.save-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 12px;
+  border-radius: 25px;
+  border: none;
+  font-weight: 600;
+  background: linear-gradient(90deg, #0050d4, #007bff);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(90deg, #0040b8, #006aff);
+}
+
+.logout-btn {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 12px;
+  border-radius: 25px;
+  border: none;
+  font-weight: 600;
+  background: #f44336;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: #d32f2f;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .container {
+    flex-direction: column;
+  }
+  .profile-card {
+    flex-direction: column;
+    padding: 2rem;
+    gap: 2rem;
+  }
+  .avatar-section .avatar {
+    width: 120px;
+    height: 120px;
+  }
+}
