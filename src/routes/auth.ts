@@ -14,7 +14,7 @@ import {
 import { db } from '../db/index.js';
 import { users } from '../db/schema.js';
 import { eq } from "drizzle-orm";
-import { AdminGetUserCommand } from "@aws-sdk/client-cognito-identity-provider";
+// ลบ AdminGetUserCommand ไม่ใช้ admin API
 
 // ✅ [แก้] import serveStatic จาก path ใหม่
 import { serveStatic } from "@hono/node-server/serve-static";
@@ -71,11 +71,11 @@ authRoute.post("/login", async (c) => {
     if (!email) throw new Error("ไม่พบอีเมลใน Cognito");
 
     // ตรวจสอบว่ามี user ใน DB หรือยัง
-  const userInDb = await db.select().from(users).where(eq(users.email, email));
+    const userInDb = await db.select().from(users).where(eq(users.email, email));
     if (!userInDb.length) {
       await db.insert(users).values({
         email,
-        displayName: username,
+        username,
       });
     }
 
@@ -137,23 +137,8 @@ authRoute.post("/confirm", async (c) => {
       ConfirmationCode: code,
     });
     await client.send(command);
-
-    // ดึง email จาก Cognito หลังยืนยัน
-    const adminGetUser = new AdminGetUserCommand({
-      UserPoolId: process.env.COGNITO_USER_POOL_ID!,
-      Username: username,
-    });
-    const userRes = await client.send(adminGetUser);
-    const emailAttr = userRes.UserAttributes?.find(attr => attr.Name === "email");
-    const email = emailAttr?.Value;
-    if (!email) throw new Error("ไม่พบอีเมลใน Cognito");
-
-    // เพิ่ม user ลง database หลังยืนยันสำเร็จ
-    await db.insert(users).values({
-      email,
-      displayName: username,
-    });
-    return c.json({ success: true, redirect: "/home", message: "ยืนยันสำเร็จแล้ว กำลังเข้าสู่ระบบ..." });
+    // ไม่ต้องเพิ่ม user ใน database ที่นี่ เพราะไม่มี accessToken และไม่สามารถดึง email ได้โดยไม่ใช้ admin
+    return c.json({ success: true, redirect: "/", message: "ยืนยันสำเร็จแล้ว กรุณาเข้าสู่ระบบ" });
   } catch (err: any) {
     return c.json({ success: false, message: err.message });
   }

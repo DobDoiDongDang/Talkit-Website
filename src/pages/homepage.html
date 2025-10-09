@@ -8,91 +8,166 @@
 </head>
 
 <body>
-    <div class="container"> <!-- Sidebar -->
+    <div class="container">
         <aside class="sidebar">
             <div class="profile"> <img src="user.png" alt="User Avatar" class="avatar">
-                <h2>User_1</h2>
+                <h2 id="username">User</h2>
             </div>
             <div class="menu">
                 <p class="menu-title">หมวดหมู่</p> <input type="text" placeholder="ค้นหา" class="search-box">
-                <ul class="category-list">
-                    <li class="active">ปัญหาโค้ด 
-                    <li>ปัญหาชีวิต
-                    <li>ปัญหาทางสังคม
-                    <li>หาเพื่อนกินข้าว
-                    <li>กินโรตีดีส้ม
-                </ul>
-            </div> <button class="sandbox-btn">SandBox</button>
-        </aside> <!-- Main Content -->
+                <ul class="category-list" id="category-list"></ul>
+            </div>
+            <button class="new-category-btn">สร้างหมวดหมู่ใหม่</button>
+            <button class="sandbox-btn">SandBox</button>
+        </aside>
         <main class="main-content">
             <h1>กระดานของฉัน</h1>
-            <div class="posts">
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="user-info"> <img src="user.png" alt="User" class="post-avatar"> <span
-                                class="username">User_2</span> </div> <span class="category">หมวดหมู่ : ปัญหาโค้ด</span>
-                    </div>
-                    <p class="post-content">We live</p>
-                </div>
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="user-info"> <img src="user.png" alt="User" class="post-avatar"> <span
-                                class="username">User_2</span> </div> <span class="category">หมวดหมู่ : ปัญหาโค้ด</span>
-                    </div>
-                    <p class="post-content">We live</p>
-                </div>
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="user-info"> <img src="user.png" alt="User" class="post-avatar"> <span
-                                class="username">User_2</span> </div> <span class="category">หมวดหมู่ : ปัญหาโค้ด</span>
-                    </div>
-                    <p class="post-content">We live</p>
-                </div>
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="user-info"> <img src="user.png" alt="User" class="post-avatar"> <span
-                                class="username">User_2</span> </div> <span class="category">หมวดหมู่ : ปัญหาโค้ด</span>
-                    </div>
-                    <p class="post-content">We live</p>
-                </div>
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="user-info"> <img src="user.png" alt="User" class="post-avatar"> <span
-                                class="username">User_2</span> </div> <span class="category">หมวดหมู่ : ปัญหาโค้ด</span>
-                    </div>
-                    <p class="post-content">We live</p>
-                </div>
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="user-info"> <img src="user.png" alt="User" class="post-avatar"> <span
-                                class="username">User_2</span> </div> <span class="category">หมวดหมู่ : ปัญหาโค้ด</span>
-                    </div>
-                    <p class="post-content">We live</p>
-                </div>
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="user-info"> <img src="user.png" alt="User" class="post-avatar"> <span
-                                class="username">User_2</span> </div> <span class="category">หมวดหมู่ : ปัญหาโค้ด</span>
-                    </div>
-                    <p class="post-content">We live</p>
-                </div>
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="user-info"> <img src="user.png" alt="User" class="post-avatar"> <span
-                                class="username">User_2</span> </div> <span class="category">หมวดหมู่ : ปัญหาโค้ด</span>
-                    </div>
-                    <p class="post-content">We live</p>
-                </div>
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="user-info"> <img src="user.png" alt="User" class="post-avatar"> <span
-                                class="username">User_2</span> </div> <span class="category">หมวดหมู่ : ปัญหาโค้ด</span>
-                    </div>
-                    <p class="post-content">We live</p>
-                </div> <!-- เพิ่มโพสต์อีกหลาย ๆ อัน -->
-            </div> <button class="new-board-btn">สร้างกระดานใหม่</button>
+            <div class="posts" id="posts"></div>
+            <button class="new-board-btn">สร้างกระดานใหม่</button>
         </main>
     </div>
+    <div id="popup-bg" class="modal-overlay" style="display:none;">
+      <div id="popup" class="modal">
+        <h2 id="popup-title"></h2>
+        <form id="popup-form">
+          <div id="popup-category-group" style="display:none;flex-direction:column;gap:0.7rem;">
+            <label for="popup-category">เลือกหมวดหมู่</label>
+            <select id="popup-category"></select>
+          </div>
+          <input type="text" id="popup-title" placeholder="หัวข้อกระดาน" style="display:none;" autocomplete="off">
+          <textarea id="popup-text" placeholder="เนื้อหากระดาน" style="display:none;resize:vertical;min-height:60px;"></textarea>
+          <div class="modal-actions">
+            <button type="submit" id="popup-submit" class="modal-btn">เพิ่ม</button>
+            <button type="button" id="popup-cancel" class="modal-btn cancel">ยกเลิก</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script>
+    let categories = [];
+    let posts = [];
+    let selectedCategory = null;
+
+    async function fetchCategories() {
+      const res = await fetch('/categories');
+      categories = await res.json();
+      renderCategories();
+    }
+
+    async function fetchPosts(categoryId = null) {
+      let url = categoryId ? `/posts?categoryId=${categoryId}` : '/posts/me';
+      const res = await fetch(url);
+      posts = await res.json();
+      renderPosts();
+    }
+
+    function renderCategories() {
+      const list = document.getElementById('category-list');
+      list.innerHTML = '';
+      categories.forEach(cat => {
+        const li = document.createElement('li');
+        li.textContent = cat.name;
+        li.onclick = () => {
+          selectedCategory = cat.id;
+          fetchPosts(cat.id);
+        };
+        list.appendChild(li);
+      });
+    }
+
+    function renderPosts() {
+      const container = document.getElementById('posts');
+      container.innerHTML = '';
+      posts.forEach(post => {
+        const card = document.createElement('div');
+        card.className = 'post-card';
+        card.onclick = () => {
+          window.location.href = `/post/${post.id}`;
+        };
+        card.innerHTML = `
+          <div class="post-header">
+            <div class="user-info"> <img src="user.png" alt="User" class="post-avatar"> <span class="username">${post.userId}</span> </div> <span class="category">หมวดหมู่ : ${post.categoryId}</span>
+          </div>
+          <p class="post-content">${post.text}</p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Initial load
+    fetchCategories();
+    fetchPosts();
+
+  document.querySelector('.new-board-btn').onclick = () => showPopup('สร้างกระดานใหม่', 'board');
+    document.querySelector('.new-category-btn').onclick = () => showPopup('สร้างหมวดหมู่ใหม่', 'category');
+
+    function showPopup(title, type) {
+      document.getElementById('popup-bg').style.display = 'flex';
+      document.getElementById('popup-title').textContent = title;
+      // Hide all fields first
+      document.getElementById('popup-category-group').style.display = 'none';
+      document.getElementById('popup-title').style.display = 'none';
+      document.getElementById('popup-text').style.display = 'none';
+      document.getElementById('popup-submit').textContent = type === 'category' ? 'บันทึก' : 'เพิ่ม';
+
+      if (type === 'category') {
+        document.getElementById('popup-title').style.display = 'block';
+        document.getElementById('popup-title').placeholder = 'ชื่อหมวดหมู่';
+        document.getElementById('popup-title').value = '';
+        document.getElementById('popup-title').focus();
+        document.getElementById('popup-text').style.display = 'none';
+        document.getElementById('popup-category-group').style.display = 'none';
+      } else if (type === 'board') {
+        // Show category select, title, and text
+        document.getElementById('popup-category-group').style.display = 'flex';
+        document.getElementById('popup-title').style.display = 'block';
+        document.getElementById('popup-title').placeholder = 'หัวข้อกระดาน';
+        document.getElementById('popup-title').value = '';
+        document.getElementById('popup-title').focus();
+        document.getElementById('popup-text').style.display = 'block';
+        document.getElementById('popup-text').value = '';
+        // Fill category select
+        const select = document.getElementById('popup-category');
+        select.innerHTML = '';
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.id;
+          option.textContent = cat.name;
+          select.appendChild(option);
+        });
+      }
+
+      document.getElementById('popup-form').onsubmit = async (e) => {
+        e.preventDefault();
+        if (type === 'category') {
+          const name = document.getElementById('popup-title').value.trim();
+          if (!name) return;
+          await fetch('/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+          });
+          fetchCategories();
+        } else if (type === 'board') {
+          const title = document.getElementById('popup-title').value.trim();
+          const text = document.getElementById('popup-text').value.trim();
+          const categoryId = document.getElementById('popup-category').value;
+          if (!title || !text || !categoryId) return;
+          await fetch('/posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, text, categoryId })
+          });
+          fetchPosts(categoryId);
+        }
+        closePopup();
+      };
+      document.getElementById('popup-cancel').onclick = closePopup;
+    }
+    function closePopup() {
+      document.getElementById('popup-bg').style.display = 'none';
+    }
+    </script>
 </body>
 
 </html>

@@ -210,6 +210,100 @@ body {
   background: linear-gradient(90deg, #0040b8, #006aff);
 }
 
+/* ปุ่มสร้างหมวดหมู่ใหม่ใน sidebar */
+.new-category-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+  background: #fff;
+  color: #0050d4;
+  border: none;
+  padding: 10px 0;
+  border-radius: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.new-category-btn:hover {
+  background: #f1f4ff;
+  transform: scale(1.04);
+}
+
+/* Popup Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0, 80, 212, 0.15);
+  padding: 2rem 2.5rem;
+  min-width: 320px;
+  max-width: 90vw;
+  position: relative;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.modal h2 {
+  margin-bottom: 0.5rem;
+  color: #0050d4;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.modal input, .modal textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #b3e5fc;
+  font-size: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.modal .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+}
+
+.modal .modal-btn {
+  background: linear-gradient(90deg, #0050d4, #007bff);
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal .modal-btn.cancel {
+  background: #eee;
+  color: #0050d4;
+}
+
+.modal .modal-btn.cancel:hover {
+  background: #e0f2ff;
+}
+
+.modal .modal-btn:hover {
+  background: linear-gradient(90deg, #0040b8, #006aff);
+}
+
 /* ======================== */
 /* Responsive สำหรับมือถือ */
 /* ======================== */

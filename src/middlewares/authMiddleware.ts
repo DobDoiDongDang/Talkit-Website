@@ -11,7 +11,7 @@ let cachedJwks: any[] | null = null;
 async function getJwkForKid(kid: string) {
   if (!cachedJwks) {
     const res = await fetch(JWKS_URL);
-    const data = await res.json();
+    const data = await res.json() as { keys: any[] };
     cachedJwks = data.keys;
   }
   return cachedJwks ? cachedJwks.find(jwk => jwk.kid === kid) : undefined;

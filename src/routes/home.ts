@@ -4,11 +4,19 @@ import { readFile } from "fs/promises";
 import * as path from "path";
 import { db } from '../db/index.js';
 import { categories, posts, comments } from '../db/schema.js';
+import { eq } from "drizzle-orm";
 
 // ✅ [แก้] import serveStatic จาก path ใหม่
 import { serveStatic } from "@hono/node-server/serve-static";
 
-const homeRoute = new Hono();
+type Variables = {
+  user?: {
+    id: number;
+    // add other user properties if needed
+  };
+};
+
+const homeRoute = new Hono<{ Variables: Variables }>();
 
 // ✅ [เพิ่ม] เสิร์ฟไฟล์ static (เช่น auth-style.css) จาก src/pages
 homeRoute.use(
@@ -52,7 +60,7 @@ homeRoute.post("/categories", async (c) => {
 homeRoute.get("/posts/me", async (c) => {
   const user = c.get("user");
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
-  const result = await db.select().from(posts).where(posts.userId.eq(user.id));
+  const result = await db.select().from(posts).where(eq(posts.userId, user.id));
   return c.json(result);
 });
 
@@ -62,11 +70,11 @@ homeRoute.post("/posts", async (c) => {
   const user = c.get("user");
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
   const inserted = await db.insert(posts).values({
-    userId: user.id,
-    categoryId: body.categoryId,
     text: body.text,
+    title: body.title,
     picture: body.picture ?? null,
     code: body.code ?? null,
+    // Add other required fields from the posts schema if needed
   }).returning();
   return c.json(inserted[0]);
 });
@@ -74,7 +82,7 @@ homeRoute.post("/posts", async (c) => {
 // ดึงคอมเมนต์ของโพสต์
 homeRoute.get("/comments/:postId", async (c) => {
   const postId = Number(c.req.param('postId'));
-  const result = await db.select().from(comments).where(comments.postId.eq(postId));
+  const result = await db.select().from(comments).where(eq(comments.postId, postId));
   return c.json(result);
 });
 

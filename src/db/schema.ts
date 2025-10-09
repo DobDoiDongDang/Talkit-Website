@@ -16,8 +16,8 @@ export const users = pgTable('users', {
         .notNull()
         .unique(),
 
-    // 4. Display Name
-    displayName: text('username')
+    // 4. Username
+    username: text('username')
         .notNull(),
 
     // 5. Role/Permission
@@ -57,6 +57,7 @@ export const posts = pgTable('posts', {
     id: serial('id').primaryKey(),
     userId: serial('user_id').notNull(), // ใครเป็นคนโพสต์ (FK -> users.id)
     categoryId: serial('category_id').notNull(), // FK -> categories.id
+    title: text('title').notNull(), // เพิ่ม title
     text: text('text').notNull(),
     picture: text('picture'), // URL หรือ path รูป (nullable)
     code: text('code'), // โค้ด (nullable)

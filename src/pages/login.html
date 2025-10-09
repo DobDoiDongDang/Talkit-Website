@@ -39,6 +39,7 @@
         window.location.href = '/auth/confirm?user=' + username;
       } else if (data.success) {
         alert('เข้าสู่ระบบสำเร็จ');
+        window.location.href = data.redirect;
       } else {
         document.getElementById('msg').textContent = data.message;
       }
