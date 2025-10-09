@@ -14,16 +14,14 @@ body {
   height: 100vh;
 }
 
-/* Container หลัก */
+/* Container */
 .container {
   display: flex;
   width: 100%;
   overflow: hidden;
 }
 
-/* ======================== */
-/* Sidebar ด้านซ้าย */
-/* ======================== */
+/* Sidebar */
 .sidebar {
   width: 270px;
   background: linear-gradient(180deg, #0050d4, #007bff);
@@ -32,8 +30,6 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* border-top-right-radius: 20px;
-  border-bottom-right-radius: 20px; */
   box-shadow: 3px 0 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -46,6 +42,12 @@ body {
   width: 80px;
   border-radius: 50%;
   border: 3px solid #fff;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
 }
 
 .profile h2 {
@@ -96,11 +98,27 @@ body {
   font-weight: bold;
 }
 
-.star {
-  color: gold;
+/* ปุ่มสร้างหมวดหมู่ใหม่ */
+.new-category-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+  background: #fff;
+  color: #0050d4;
+  border: none;
+  padding: 10px 0;
+  border-radius: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
 
-/* ปุ่ม Sandbox */
+.new-category-btn:hover {
+  background: #f1f4ff;
+  transform: scale(1.04);
+}
+
+/* ปุ่ม SandBox */
 .sandbox-btn {
   margin-top: auto;
   background: #ffffff;
@@ -119,9 +137,7 @@ body {
   transform: scale(1.05);
 }
 
-/* ======================== */
-/* Main Content */
-/* ======================== */
+/* Main content */
 .main-content {
   flex: 1;
   padding: 2rem 3rem;
@@ -135,7 +151,7 @@ body {
   margin-bottom: 1.5rem;
 }
 
-/* การ์ดโพสต์ */
+/* Posts */
 .posts {
   display: flex;
   flex-direction: column;
@@ -210,26 +226,6 @@ body {
   background: linear-gradient(90deg, #0040b8, #006aff);
 }
 
-/* ปุ่มสร้างหมวดหมู่ใหม่ใน sidebar */
-.new-category-btn {
-  width: 100%;
-  margin-top: 1.5rem;
-  background: #fff;
-  color: #0050d4;
-  border: none;
-  padding: 10px 0;
-  border-radius: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-}
-
-.new-category-btn:hover {
-  background: #f1f4ff;
-  transform: scale(1.04);
-}
-
 /* Popup Modal Styles */
 .modal-overlay {
   position: fixed;
@@ -237,50 +233,54 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 999;
 }
 
 .modal {
   background: #fff;
   border-radius: 18px;
-  box-shadow: 0 8px 32px rgba(0, 80, 212, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 80, 212, 0.2);
   padding: 2rem 2.5rem;
-  min-width: 320px;
-  max-width: 90vw;
-  position: relative;
-  z-index: 1001;
+  width: 350px;
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
+  animation: fadeIn 0.25s ease;
 }
 
 .modal h2 {
-  margin-bottom: 0.5rem;
   color: #0050d4;
   font-size: 1.3rem;
   font-weight: 600;
+  text-align: center;
 }
 
-.modal input, .modal textarea {
+.modal input {
   width: 100%;
   padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #b3e5fc;
+  border-radius: 10px;
+  border: 2px solid #b3e5fc;
   font-size: 1rem;
-  margin-bottom: 0.7rem;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
 }
 
-.modal .modal-actions {
+.modal input:focus {
+  border-color: #0050d4;
+  box-shadow: 0 0 8px rgba(0, 91, 255, 0.3);
+}
+
+.modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.7rem;
 }
 
-.modal .modal-btn {
+.modal-btn {
   background: linear-gradient(90deg, #0050d4, #007bff);
   color: #fff;
   border: none;
@@ -288,25 +288,25 @@ body {
   border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
-.modal .modal-btn.cancel {
-  background: #eee;
+.modal-btn.cancel {
+  background: #e3f2fd;
   color: #0050d4;
 }
 
-.modal .modal-btn.cancel:hover {
-  background: #e0f2ff;
+.modal-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
 }
 
-.modal .modal-btn:hover {
-  background: linear-gradient(90deg, #0040b8, #006aff);
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-/* ======================== */
-/* Responsive สำหรับมือถือ */
-/* ======================== */
+/* Responsive */
 @media (max-width: 768px) {
   body {
     flex-direction: column;
@@ -316,8 +316,6 @@ body {
     width: 100%;
     flex-direction: row;
     justify-content: space-between;
-    border-radius: 0;
-    box-shadow: none;
   }
 
   .main-content {

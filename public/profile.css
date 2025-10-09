@@ -107,6 +107,99 @@ body {
   transform: scale(1.05);
 }
 
+/* ปุ่มสร้างหมวดหมู่ใหม่ */
+.new-category-btn {
+  width: 100%;
+  background: #fff;
+  color: #0050d4;
+  border: none;
+  padding: 10px 0;
+  border-radius: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-bottom: 1rem;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.new-category-btn:hover {
+  background: #f1f4ff;
+  transform: scale(1.04);
+}
+
+/* Popup Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0, 80, 212, 0.15);
+  padding: 2rem 2.5rem;
+  min-width: 320px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.modal h2 {
+  margin-bottom: 0.5rem;
+  color: #0050d4;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.modal input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #b3e5fc;
+  font-size: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+}
+
+.modal-btn {
+  background: linear-gradient(90deg, #0050d4, #007bff);
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.modal-btn.cancel {
+  background: #eee;
+  color: #0050d4;
+}
+
+.modal-btn.cancel:hover {
+  background: #e0f2ff;
+}
+
+.modal-btn:hover {
+  background: linear-gradient(90deg, #0040b8, #006aff);
+}
+
+
 /* ======================== */
 /* Main Content: Profile */
 .main-content {
@@ -227,6 +320,28 @@ body {
 
 .logout-btn:hover {
   background: #d32f2f;
+}
+
+/* ปุ่มย้อนกลับอยู่นอกการ์ด */
+.back-container {
+    display: flex;
+    justify-content: flex-end; /* อยู่ด้านขวา */
+    margin-top: 1.5rem; /* เว้นระยะจากการ์ดด้านบน */
+}
+
+.back-btn {
+    padding: 12px 25px;
+    border-radius: 25px;
+    border: none;
+    font-weight: 600;
+    background: #4fc3f7;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: #29b6f6;
 }
 
 /* Responsive */
