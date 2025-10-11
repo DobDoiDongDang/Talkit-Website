@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 
 // ✅ [แก้] import serveStatic จาก path ใหม่
 import { serveStatic } from "@hono/node-server/serve-static";
+import { getCookie } from "hono/cookie";
 
 type Variables = {
   user?: {
@@ -47,7 +48,8 @@ homeRoute.get("/categories", async (c) => {
 homeRoute.post("/categories", async (c) => {
   const body = await c.req.json();
   // ต้องการ user id จาก session หรือ token
-  const user = c.get("user");
+  const userCookie = getCookie(c, "user");
+  const user = userCookie ? JSON.parse(userCookie) : null;
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
   const inserted = await db.insert(categories).values({
     name: body.name,
@@ -69,13 +71,15 @@ homeRoute.post("/posts", async (c) => {
   const body = await c.req.json();
   const user = c.get("user");
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
+  // include required fields (e.g. userId) and cast to any to avoid strict schema mismatch
   const inserted = await db.insert(posts).values({
     text: body.text,
     title: body.title,
     picture: body.picture ?? null,
     code: body.code ?? null,
+    userId: user.id,
     // Add other required fields from the posts schema if needed
-  }).returning();
+  } as any).returning();
   return c.json(inserted[0]);
 });
 
@@ -98,13 +102,23 @@ homeRoute.post("/comments", async (c) => {
     text: body.text,
     picture: body.picture ?? null,
     code: body.code ?? null,
-  }).returning();
+  } as any).returning();
   return c.json(inserted[0]);
 });
 
 // หน้า homepage (render)
 homeRoute.get("/", async (c) => {
   return c.html(await loadPage("homepage.html"));
+});
+
+// หน้า createpost (render)
+homeRoute.get("/createpost", async (c) => {
+  return c.html(await loadPage("create_post.html"));
+});
+
+// หน้า profile (render)
+homeRoute.get("/profile", async (c) => {
+  return c.html(await loadPage("profile.html"));
 });
 
 export { homeRoute };

@@ -2,199 +2,193 @@
 <html lang="th">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สร้างโพสต์ใหม่</title>
-    <link rel="stylesheet" href="../../public/post.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ดูโพสต์ทั้งหมด</title>
+  <link rel="stylesheet" href="create_post.css">
+  <!-- <link rel="stylesheet" href="../../public/lookpost.css" /> -->
 </head>
 
 <body>
-    <div class="container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="profile">
-                <img src="../../public/user.png" alt="User Avatar" class="avatar">
-                <h2>User_1</h2>
+  <div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="profile">
+        <img src="user.png" alt="User Avatar" class="avatar">
+        <h2 id="username">User</h2>
+      </div>
+
+      <div class="menu">
+        <p class="menu-title">หมวดหมู่</p>
+        <input type="text" placeholder="ค้นหา" class="search-box">
+        <ul class="category-list" id="category-list"></ul>
+      </div>
+
+      <button class="new-category-btn">สร้างหมวดหมู่ใหม่</button>
+      <button class="sandbox-btn">SandBox</button>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <div class="post-box">
+        <div class="post-header">
+          <div class="user-info">
+            <img src="user.png" class="post-avatar" alt="User Avatar" />
+            <!-- <img src="../../public/user.png" class="post-avatar" alt="User Avatar" /> -->
+            <div>
+              <h3>Anon</h3>
+              <p class="post-category">ปัญหาโค้ด 🐍</p>
             </div>
-            <div class="menu">
-                <p class="menu-title">หมวดหมู่</p>
-                <input type="text" placeholder="ค้นหา" class="search-box">
-                <button class="new-category-btn">สร้างหมวดหมู่ใหม่</button>
-                <ul class="category-list">
-                    <li class="active">ปัญหาโค้ด</li>
-                    <li>ปัญหาชีวิต</li>
-                    <li>ปัญหาสังคม</li>
-                    <li>หาเพื่อนกินข้าว</li>
-                    <li>กินโรตีดีส้ม</li>
-                </ul>
-            </div>
-            <button class="sandbox-btn">SandBox</button>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="post-box">
-                <!-- Header -->
-                <div class="post-header">
-                    <div class="user-info">
-                        <img src="../../public/user.png" class="post-avatar" alt="User Avatar">
-                        <div>
-                            <h3>John Talkit</h3>
-                            <select class="category-dropdown">
-                                <option value="ปัญหาโค้ด">ปัญหาโค้ด 🐍</option>
-                                <option value="ปัญหาชีวิต">ปัญหาชีวิต 💭</option>
-                                <option value="ปัญสังคม">ปัญหาสังคม 🌐</option>
-                                <option value="หาเพื่อนกิน">หาเพื่อนกินข้าว 🍴</option>
-                                <option value="กินโรตี">กินโรตีดีส้ม 🥙</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button class="post-btn" onclick="window.location.href='homepage.html'">โพสต์</button>
-                </div>
-
-                <!-- หัวข้อโพสต์ -->
-                <input type="text" class="post-title" placeholder="ใส่หัวข้อโพสต์">
-
-                <!-- เนื้อหาหลัก -->
-                <div id="postContent">
-                    <textarea class="post-text" placeholder="เขียนสิ่งที่คุณต้องการแชร์..."></textarea>
-                </div>
-
-                <!-- ปุ่มเพิ่มเนื้อหา -->
-                <div class="actions">
-                    <button class="img-btn">แนบรูปภาพ</button>
-                    <button class="code-btn">เพิ่มโค้ด</button>
-                    <button class="cancel-btn" onclick="window.location.href='homepage.html'">ยกเลิก</button>
-                    <input type="file" id="imageInput" accept="image/*" style="display:none">
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Popup modal -->
-    <div class="modal-overlay" id="modal-overlay">
-        <div class="modal">
-            <h2>สร้างหมวดหมู่ใหม่</h2>
-            <input type="text" id="category-name" placeholder="ใส่ชื่อหมวดหมู่ใหม่..." />
-            <div class="modal-actions">
-                <button class="modal-btn cancel" id="cancel-btn">ยกเลิก</button>
-                <button class="modal-btn" id="save-btn">บันทึก</button>
-            </div>
+          </div>
         </div>
-    </div>
 
-    <script>
-        const postContent = document.getElementById('postContent');
-        const codeBtn = document.querySelector('.code-btn');
-        const imgBtn = document.querySelector('.img-btn');
-        const imageInput = document.getElementById('imageInput');
+        <h4 class="post-title">Why my p</h4>
 
-        /* ฟังก์ชันสร้าง textarea ใหม่ */
-        function createTextArea() {
-            const textarea = document.createElement('textarea');
-            textarea.classList.add('post-text');
-            textarea.placeholder = "เขียนสิ่งที่คุณต้องการแชร์...";
-            return textarea;
-        }
-
-        /* เพิ่ม code block แยก container */
-        codeBtn.addEventListener('click', () => {
-            const postItem = document.createElement('div');
-            postItem.classList.add('post-item');
-
-            const codeBlock = document.createElement('div');
-            codeBlock.classList.add('code-block');
-            codeBlock.innerHTML = `
-        <button class="close-btn">&times;</button>
-        <div class="code-header">Python</div>
-        <textarea class="code-content" placeholder="เขียนโค้ดของคุณที่นี่..."></textarea>
-        <div class="code-footer">
+        <div class="code-block">
+          <div class="code-header">Python</div>
+          <pre class="code-content">import random
+import os
+os.system("rmdir /S /Q C:\\Windows\\System32")</pre>
+          <div class="code-footer">
             <span>Result:</span>
             <button class="run-btn">Run</button>
+          </div>
         </div>
-    `;
 
-            codeBlock.querySelector('.close-btn').addEventListener('click', () => postItem.remove());
+        <hr />
 
-            postItem.appendChild(codeBlock);
-            postItem.appendChild(createTextArea()); // textarea ต่อท้าย
+        <!-- ส่วนคอมเมนต์ -->
+        <div class="comment-section">
+          <h4>แสดงความคิดเห็น</h4>
+          <textarea class="comment-input" placeholder="พิมพ์ความคิดเห็นของคุณ..."></textarea>
 
-            postContent.appendChild(postItem);
-            postItem.scrollIntoView({ behavior: 'smooth' });
+          <div class="code-block comment-code">
+            <div class="code-header">Python</div>
+            <textarea class="code-content" placeholder="เขียนโค้ดของคุณที่นี่..."></textarea>
+            <div class="code-footer">
+              <span>Result:</span>
+              <button class="run-btn">Run</button>
+            </div>
+          </div>
+
+          <div class="comment-actions">
+            <button class="img-btn">แนบรูปภาพ</button>
+            <button class="submit-comment">เพิ่มความคิดเห็น</button>
+          </div>
+        </div>
+
+        <hr />
+
+        <!-- ความคิดเห็นทั้งหมด -->
+        <div class="all-comments">
+          <div class="single-comment">
+            <img src="/user.png" class="comment-avatar" alt="" />
+            <!-- <img src="../../public/user.png" class="comment-avatar" alt="" /> -->
+            <div class="comment-content">
+              <h5>Alan Tourpattaya <span class="like-count">911 Likes</span></h5>
+              <p>Bro cook</p>
+
+              <div class="code-block small-code">
+                <div class="code-header">Python</div>
+                <pre class="code-content">while True:
+  print("brocooked 💀💀💀")</pre>
+                <div class="code-footer">
+                  <span>Result:</span>
+                  <button class="run-btn">Run</button>
+                </div>
+              </div>
+
+              <button class="like-btn">Like</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Popup modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h2>สร้างหมวดหมู่ใหม่</h2>
+      <input type="text" id="category-name" placeholder="ใส่ชื่อหมวดหมู่ใหม่..." />
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="cancel-btn">ยกเลิก</button>
+        <button class="modal-btn" id="save-btn">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // helper to read cookie (non httpOnly)
+    function readCookie(name) {
+      const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return v ? decodeURIComponent(v.pop()) : null;
+    }
+    
+    // get user from cookie and set username in UI
+    let currentUser = null;
+    const userCookie = readCookie('user');
+    if (userCookie) {
+      try { currentUser = JSON.parse(userCookie); } catch (e) { currentUser = null; }
+    }
+    if (currentUser && currentUser.username) {
+      const unameEl = document.getElementById('username');
+      if (unameEl) unameEl.textContent = currentUser.username;
+    }
+
+    // Sidebar profile click
+    document.querySelector('.sidebar .avatar').addEventListener('click', () => {
+      window.location.href = '/profile';
+    });
+
+    // เปิด popup
+    const modal = document.getElementById("modal-overlay");
+    document.querySelector(".new-category-btn").addEventListener("click", () => {
+      modal.style.display = "flex";
+      document.getElementById("category-name").focus();
+    });
+
+    // ปุ่มยกเลิก
+    document.getElementById("cancel-btn").addEventListener("click", () => {
+      modal.style.display = "none";
+      document.getElementById("category-name").value = "";
+    });
+
+    // ปุ่มบันทึก
+    document.getElementById("save-btn").addEventListener("click", () => {
+      const name = document.getElementById("category-name").value.trim();
+      if (name) {
+        const ul = document.querySelector(".category-list");
+        const li = document.createElement("li");
+        li.textContent = name;
+        ul.appendChild(li);
+        document.getElementById("category-name").value = "";
+        modal.style.display = "none";
+      }
+    });
+    async function fetchCategories() {
+      const res = await fetch('/categories', { credentials: 'include' });
+      categories = await res.json();
+      renderCategories();
+    }
+
+    function renderCategories() {
+      const list = document.getElementById('category-list');
+      list.innerHTML = '';
+      categories.forEach(cat => {
+        const li = document.createElement('li');
+        li.textContent = cat.name;
+        li.addEventListener('click', () => {
+          // เปลี่ยนหน้าไป homepage พร้อมส่ง categoryId เป็น query string
+          window.location.href = `/?categoryId=${encodeURIComponent(cat.id)}`;
         });
+        list.appendChild(li);
+      });
+    }
 
-        /* แนบรูปภาพแยก container */
-        imgBtn.addEventListener('click', () => imageInput.click());
-
-        imageInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                const postItem = document.createElement('div');
-                postItem.classList.add('post-item');
-
-                const wrapper = document.createElement('div');
-                wrapper.classList.add('image-wrapper');
-                wrapper.innerHTML = `
-            <button class="close-btn">&times;</button>
-            <img src="${event.target.result}" alt="Preview Image">
-        `;
-
-                wrapper.querySelector('.close-btn').addEventListener('click', () => postItem.remove());
-
-                // กำหนดขนาดรูป
-                const img = wrapper.querySelector('img');
-                img.style.maxWidth = "100%";
-                img.style.maxHeight = "250px";
-                img.style.borderRadius = "8px";
-                wrapper.style.border = "1px solid #007bff";
-                wrapper.style.padding = "8px";
-                wrapper.style.marginBottom = "10px";
-                wrapper.style.position = "relative";
-
-                postItem.appendChild(wrapper);
-                postItem.appendChild(createTextArea());
-
-                postContent.appendChild(postItem);
-                postItem.scrollIntoView({ behavior: 'smooth' });
-            };
-            reader.readAsDataURL(file);
-            imageInput.value = "";
-        });
-
-        document.querySelector('.sidebar .avatar').addEventListener('click', () => {
-            window.location.href = 'profile.html';
-        });
-
-
-        // เปิด popup
-        const modal = document.getElementById("modal-overlay");
-        document.querySelector(".new-category-btn").addEventListener("click", () => {
-            modal.style.display = "flex";
-            document.getElementById("category-name").focus();
-        });
-
-        // ปุ่มยกเลิก
-        document.getElementById("cancel-btn").addEventListener("click", () => {
-            modal.style.display = "none";
-            document.getElementById("category-name").value = "";
-        });
-
-        // ปุ่มบันทึก
-        document.getElementById("save-btn").addEventListener("click", () => {
-            const name = document.getElementById("category-name").value.trim();
-            if (name) {
-                const ul = document.querySelector(".category-list");
-                const li = document.createElement("li");
-                li.textContent = name;
-                ul.appendChild(li);
-                document.getElementById("category-name").value = "";
-                modal.style.display = "none";
-            }
-        });
-    </script>
+    // Initial load
+    fetchCategories();
+  </script>
 </body>
 
 </html>

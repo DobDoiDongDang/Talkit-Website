@@ -5,8 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>กระดานของฉัน</title>
-  <!-- <link rel="stylesheet" href="homepage.css"> -->
-  <link rel="stylesheet" href="../../public/homepage.css">
+  <link rel="stylesheet" href="homepage.css">
 </head>
 
 <body>
@@ -14,8 +13,7 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="profile">
-        <!-- ภาพuserwไม่ขึ้นเปลี่ยนพาทเป็น use.png -->
-        <img src="../../public/user.png" alt="User Avatar" class="avatar">
+        <img src="user.png" alt="User Avatar" class="avatar">
         <h2 id="username">User</h2>
       </div>
 
@@ -33,7 +31,7 @@
     <main class="main-content">
       <h1>กระดานของฉัน</h1>
       <div class="posts" id="posts"></div>
-      <button class="new-board-btn" onclick="window.location.href='post.html'">สร้างกระดานใหม่</button>
+      <button class="new-board-btn" onclick="window.location.href='/createpost'">สร้างกระดานใหม่</button>
     </main>
   </div>
 
@@ -50,19 +48,36 @@
   </div>
 
   <script>
+    // helper to read cookie (non httpOnly)
+    function readCookie(name) {
+      const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return v ? decodeURIComponent(v.pop()) : null;
+    }
+
+    // get user from cookie and set username in UI
+    let currentUser = null;
+    const userCookie = readCookie('user');
+    if (userCookie) {
+      try { currentUser = JSON.parse(userCookie); } catch (e) { currentUser = null; }
+    }
+    if (currentUser && currentUser.username) {
+      const unameEl = document.getElementById('username');
+      if (unameEl) unameEl.textContent = currentUser.username;
+    }
+
     let categories = [];
     let posts = [];
     let selectedCategory = null;
 
     async function fetchCategories() {
-      const res = await fetch('/categories');
+      const res = await fetch('/categories', { credentials: 'include' });
       categories = await res.json();
       renderCategories();
     }
 
     async function fetchPosts(categoryId = null) {
       let url = categoryId ? `/posts?categoryId=${categoryId}` : '/posts/me';
-      const res = await fetch(url);
+      const res = await fetch(url, { credentials: 'include' });
       posts = await res.json();
       renderPosts();
     }
@@ -73,10 +88,10 @@
       categories.forEach(cat => {
         const li = document.createElement('li');
         li.textContent = cat.name;
-        li.onclick = () => {
-          selectedCategory = cat.id;
-          fetchPosts(cat.id);
-        };
+        li.addEventListener('click', () => {
+          // เปลี่ยนหน้าไป homepage พร้อมส่ง categoryId เป็น query string
+          window.location.href = `/?categoryId=${encodeURIComponent(cat.id)}`;
+        });
         list.appendChild(li);
       });
     }
@@ -88,20 +103,28 @@
         const card = document.createElement('div');
         card.className = 'post-card';
         card.onclick = () => {
-          window.location.href = `/post/${post.id}`;
+          window.location.href = `/post?id=${post.id}`;
         };
+        const author = post.username || (currentUser && currentUser.username) || post.userId || 'ไม่ระบุ';
+        const time = post.created_at ? new Date(post.created_at).toLocaleString() : '';
         card.innerHTML = `
-        <div class="post-header">
-          <div class="user-info">
-            <img src="../../public/user.png" alt="User" class="post-avatar">
-            <span class="username">${post.userId}</span>
+          <div class="post-header">
+            <div class="user-info">
+              <img src="user.png" alt="User" class="post-avatar">
+              <span class="username">${escapeHtml(author)}</span>
+            </div>
+            <span class="category">หมวดหมู่ : ${escapeHtml(post.categoryName || String(post.categoryId || ''))}</span>
           </div>
-          <span class="category">หมวดหมู่ : ${post.categoryId}</span>
-        </div>
-        <p class="post-content">${post.text}</p>
-      `;
+          <p class="post-content">${escapeHtml(post.title || '')}</p>
+          <p class="post-snippet">${escapeHtml(post.text || '').slice(0, 300)}${(post.text || '').length > 300 ? '...' : ''}</p>
+          <div class="post-footer"><small>${escapeHtml(time)}</small></div>
+        `;
         container.appendChild(card);
       });
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, function (m) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]); });
     }
 
     // Initial load
@@ -110,12 +133,10 @@
 
     // Sidebar profile click
     document.querySelector('.sidebar .avatar').addEventListener('click', () => {
-      window.location.href = 'profile.html';
+      window.location.href = '/profile';
     });
 
-    // ==========================
-    // Popup สร้างหมวดหมู่ใหม่
-    // ==========================
+    // Popup logic (same as before)
     const modalOverlay = document.getElementById('modal-overlay');
     const cancelBtn = document.getElementById('cancel-btn');
     const saveBtn = document.getElementById('save-btn');
@@ -134,6 +155,7 @@
       if (!name) return alert('กรุณากรอกชื่อหมวดหมู่');
       await fetch('/categories', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
       });
@@ -141,7 +163,6 @@
       fetchCategories();
     };
 
-    // ปิด popup เมื่อคลิกพื้นหลัง
     modalOverlay.addEventListener('click', (e) => {
       if (e.target === modalOverlay) modalOverlay.style.display = 'none';
     });

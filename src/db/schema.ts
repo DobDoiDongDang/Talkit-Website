@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, varchar, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, serial, integer, text, timestamp, varchar, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 /**
@@ -48,30 +48,58 @@ export const users = pgTable('users', {
 export const categories = pgTable('categories', {
     id: serial('id').primaryKey(),
     name: text('name').notNull(),
-    createdBy: serial('created_by').notNull(), // user id ที่สร้างหมวดหมู่
+    createdBy: integer('created_by').notNull(), // user id ที่สร้างหมวดหมู่
     createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 // โพสต์ (Post)
 export const posts = pgTable('posts', {
     id: serial('id').primaryKey(),
-    userId: serial('user_id').notNull(), // ใครเป็นคนโพสต์ (FK -> users.id)
-    categoryId: serial('category_id').notNull(), // FK -> categories.id
+    userId: integer('user_id').notNull(), // ใครเป็นคนโพสต์ (FK -> users.id)
+    categoryId: integer('category_id').notNull(), // FK -> categories.id
     title: text('title').notNull(), // เพิ่ม title
     text: text('text').notNull(),
-    picture: text('picture'), // URL หรือ path รูป (nullable)
-    code: text('code'), // โค้ด (nullable)
+    createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ตารางเก็บรูปของโพสต์ (หลายรูปต่อโพสต์)
+export const post_picture = pgTable('post_picture', {
+    id: serial('id').primaryKey(),
+    postId: integer('post_id').notNull(), // FK -> posts.id
+    url: text('url').notNull(), // เก็บ URL หรือ path ของรูป
+    createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ตารางเก็บ code ของโพสต์ (หลาย code ต่อโพสต์)
+export const post_code = pgTable('post_code', {
+    id: serial('id').primaryKey(),
+    postId: integer('post_id').notNull(), // FK -> posts.id
+    code: text('code').notNull(),
     createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 // คอมเมนต์ (Comment)
+// ลบ field picture และ code ออกมาเป็นตารางแยกเพื่อรองรับหลายรายการต่อคอมเมนต์
 export const comments = pgTable('comments', {
     id: serial('id').primaryKey(),
-    postId: serial('post_id').notNull(), // FK -> posts.id
-    userId: serial('user_id').notNull(), // ใครเป็นคน comment (FK -> users.id)
-    categoryId: serial('category_id').notNull(), // FK -> categories.id
+    postId: integer('post_id').notNull(), // FK -> posts.id
+    userId: integer('user_id').notNull(), // ใครเป็นคน comment (FK -> users.id)
     text: text('text').notNull(),
-    picture: text('picture'), // URL หรือ path รูป (nullable)
-    code: text('code'), // โค้ด (nullable)
+    createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ตารางเก็บรูปของคอมเมนต์ (หลายรูปต่อคอมเมนต์)
+export const comment_picture = pgTable('comment_picture', {
+    id: serial('id').primaryKey(),
+    commentId: integer('comment_id').notNull(), // FK -> comments.id
+    url: text('url').notNull(), // เก็บ URL หรือ path ของรูป
+    createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ตารางเก็บ code ของคอมเมนต์ (หลาย code ต่อคอมเมนต์)
+export const comment_code = pgTable('comment_code', {
+    id: serial('id').primaryKey(),
+    commentId: integer('comment_id').notNull(), // FK -> comments.id
+    code: text('code').notNull(),
     createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });

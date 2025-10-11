@@ -18,6 +18,7 @@ import { eq } from "drizzle-orm";
 
 // ✅ [แก้] import serveStatic จาก path ใหม่
 import { serveStatic } from "@hono/node-server/serve-static";
+import { setCookie } from "hono/cookie";
 
 const authRoute = new Hono();
 
@@ -64,23 +65,44 @@ authRoute.post("/login", async (c) => {
 
     if (!idToken || !accessToken) throw new Error("ไม่พบ Token");
 
-    // ดึงข้อมูล user จาก accessToken
+    // ดึงข้อมูล user จาก accessToken (ไม่ใช้ admin)
     const userRes = await client.send(new GetUserCommand({ AccessToken: accessToken }));
     const emailAttr = userRes.UserAttributes?.find(attr => attr.Name === "email");
     const email = emailAttr?.Value;
     if (!email) throw new Error("ไม่พบอีเมลใน Cognito");
 
     // ตรวจสอบว่ามี user ใน DB หรือยัง
-    const userInDb = await db.select().from(users).where(eq(users.email, email));
-    if (!userInDb.length) {
+    let dbUsers = await db.select().from(users).where(eq(users.email, email));
+    if (!dbUsers.length) {
+      // ถ้าไม่มี ให้ insert แล้วดึงข้อมูลมาจาก DB อีกครั้งเพื่อเอา id
       await db.insert(users).values({
         email,
         username,
       });
+      dbUsers = await db.select().from(users).where(eq(users.email, email));
     }
 
-  // ✅ เก็บ AccessToken ใน Cookie (HTTP-only)
-  c.header("Set-Cookie", `token=${accessToken}; HttpOnly; Path=/; Max-Age=3600; Secure`);
+    const dbUser = dbUsers[0];
+    if (!dbUser) throw new Error("ไม่สามารถบันทึกหรือดึงข้อมูลผู้ใช้จากฐานข้อมูลได้");
+
+    // เก็บ AccessToken ใน Cookie (HTTP-only)
+    setCookie(c, "token", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Lax",
+      path: "/",
+      maxAge: 60 * 60, // 1 hour
+    });
+
+    // เก็บข้อมูล user ที่จำเป็นให้ frontend อ่านได้ (ไม่ต้องเก็บ sensitive)
+    const userInfo = JSON.stringify({ id: dbUser.id, username: dbUser.username, email });
+    setCookie(c, "user", userInfo, {
+      httpOnly: false,
+      secure: true,
+      sameSite: "Lax",
+      path: "/",
+      maxAge: 60 * 60,
+    });
 
     return c.json({
       success: true,
