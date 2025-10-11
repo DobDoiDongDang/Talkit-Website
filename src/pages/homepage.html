@@ -76,10 +76,9 @@
     }
 
     async function fetchPosts(categoryId = null) {
-      let url = categoryId ? `/posts?categoryId=${categoryId}` : '/posts/me';
+      let url = categoryId ? `/posts/${categoryId}` : '/posts/me';
       const res = await fetch(url, { credentials: 'include' });
       posts = await res.json();
-      console.log(posts)
       renderPosts();
     }
 
@@ -90,8 +89,7 @@
         const li = document.createElement('li');
         li.textContent = cat.name;
         li.addEventListener('click', () => {
-          // เปลี่ยนหน้าไป homepage พร้อมส่ง categoryId เป็น query string
-          window.location.href = `/?categoryId=${encodeURIComponent(cat.id)}`;
+          fetchPosts(cat.id);
         });
         list.appendChild(li);
       });
@@ -130,7 +128,16 @@
 
     // Initial load
     fetchCategories();
-    fetchPosts();
+    // ดึงค่า categoryId จาก query string
+    const params = new URLSearchParams(window.location.search);
+    const categoryId = params.get('categoryId');
+    if (categoryId) {
+      fetchPosts(categoryId); // ดึงโพสต์ตาม categoryId ที่ได้
+      selectedCategory = Number(categoryId);
+    } else {
+      fetchPosts(); // ดึงโพสต์ทั้งหมด
+      selectedCategory = null;
+    };
 
 
 

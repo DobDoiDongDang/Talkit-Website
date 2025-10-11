@@ -10,6 +10,38 @@ import { eq, desc } from "drizzle-orm";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { getCookie } from "hono/cookie";
 
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { v4 as uuidv4 } from "uuid";
+import multer from "multer";
+
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    sessionToken: process.env.AWS_SESSION_TOKEN!,
+  },
+});
+
+export async function uploadImageToS3(buffer: ArrayBuffer | Uint8Array | Buffer, userId: number, mimetype: string) {
+  const imageId = uuidv4();
+  const ext = mimetype.split("/")[1] || "jpg";
+  const key = `${imageId}.${ext}`;
+
+  // Ensure Body is a Buffer/Uint8Array (types accepted by PutObjectCommand)
+  const body = Buffer.isBuffer(buffer) || buffer instanceof Uint8Array ? buffer : Buffer.from(buffer);
+  console.log(body)
+  await s3.send(new PutObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET!,
+    Key: key,
+    Body: body,
+    ContentType: mimetype,
+    ACL: "public-read"
+  }));
+
+  return `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+}
+
 type Variables = {
   user?: {
     id: number;
@@ -94,8 +126,7 @@ homeRoute.get("/posts/me", async (c) => {
 // ดึงโพสต์ตามหมวดหมู่
 homeRoute.get("/posts/:categoryId", async (c) => {
   try {
-    const categoryId = c.req.param('categoryId');
-
+    const categoryId = parseInt(c.req.param('categoryId'));
     if (!categoryId) {
       return c.json({ error: 'Category ID is required' }, 400);
     }
@@ -112,9 +143,8 @@ homeRoute.get("/posts/:categoryId", async (c) => {
       })
       .from(posts)
       .leftJoin(categories, eq(posts.categoryId, categories.id))
-      .where(eq(posts.categoryId, Number(categoryId)))
+      .where(eq(posts.categoryId, categoryId))
       .orderBy(desc(posts.createdAt));
-
     return c.json(postslist);
   } catch (error) {
     console.error('Error fetching category posts:', error);
@@ -122,98 +152,70 @@ homeRoute.get("/posts/:categoryId", async (c) => {
   }
 });
 
-// เพิ่มโพสต์ใหม่
-homeRoute.post("/posts", async (c) => {
-  try {
-    const body = await c.req.json();
+const upload = multer();
 
-    // Validate request body
-    if (!body || typeof body !== 'object') {
-      return c.json({
-        error: 'Invalid request body'
-      }, 400);
+// เพิ่มโพสต์ใหม่ (รองรับ multipart/form-data)
+homeRoute.post("/posts", async (c: any) => {
+  try {
+    const body = await c.req.parseBody();
+    console.log(body)
+    const files = body['images'] as File;
+
+
+    const { title, text, categoryId } = body;
+    const categoryIdNum = Number(categoryId);
+    if (!categoryId || isNaN(categoryIdNum)) {
+      return c.json({ error: "Invalid categoryId" }, 400);
     }
 
-    const { title, text, categoryId, images, codes } = body;
+    let codes = body.codes;
 
-    // Validate required fields
-    if (!title || !categoryId) {
-      return c.json({
-        error: 'Missing required fields'
-      }, 400);
+    // กรณี codes ส่งมาหลายอัน จะเป็น array, ถ้ามีอันเดียวจะเป็น string
+    if (codes && !Array.isArray(codes)) {
+      codes = [codes];
     }
 
     const userCookie = getCookie(c, "user");
     const user = userCookie ? JSON.parse(userCookie) : null;
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
     return await db.transaction(async (tx) => {
-      // Create main post
+      // 1. สร้างโพสต์
       const [post] = await tx.insert(posts).values({
         userId: user.id,
-        categoryId,
+        categoryId: categoryIdNum,
         title,
         text: text || ''
       }).returning();
 
-      // Add images if present
-      if (Array.isArray(images) && images.length > 0) {
-        await tx.insert(post_picture).values(
-          images.map(url => ({
+      // 2. อัปโหลดรูปไป S3 และบันทึก url
+      if (files) {
+          const url = await uploadImageToS3(await files.arrayBuffer(), user.id, files.type);
+          await tx.insert(post_picture).values({
             postId: post.id,
-            url: url.toString()
-          }))
-        );
+            url,
+          });
       }
 
-      // Add codes if present
-      if (Array.isArray(codes) && codes.length > 0) {
+      // 3. เพิ่ม code blocks
+      if (codes && Array.isArray(codes)) {
         await tx.insert(post_code).values(
-          codes.map(code => ({
+          codes.map((code: string) => ({
             postId: post.id,
             code: code.toString()
           }))
         );
       }
 
-      return c.json({
-        success: true,
-        post
-      });
+      return c.json({ success: true, post });
     });
-  } catch (error: string | any) {
+  } catch (error: any) {
     console.error('Post creation error:', error);
     return c.json({
       error: 'Failed to process request',
       details: error.message
     }, 500);
   }
-});
-
-// ดึงคอมเมนต์ของโพสต์
-homeRoute.get("/comments/:postId", async (c) => {
-  const postId = Number(c.req.param('postId'));
-  const result = await db.select().from(comments).where(eq(comments.postId, postId));
-  return c.json(result);
-});
-
-// เพิ่มคอมเมนต์ใหม่
-homeRoute.post("/comments", async (c) => {
-  const body = await c.req.json();
-  const user = c.get("user");
-  if (!user) return c.json({ error: 'Unauthorized' }, 401);
-  const inserted = await db.insert(comments).values({
-    postId: body.postId,
-    userId: user.id,
-    categoryId: body.categoryId,
-    text: body.text,
-    picture: body.picture ?? null,
-    code: body.code ?? null,
-  } as any).returning();
-  return c.json(inserted[0]);
 });
 
 // หน้า homepage (render)

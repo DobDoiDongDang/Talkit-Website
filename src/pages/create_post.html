@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สร้างโพสต์ใหม่</title>
     <link rel="stylesheet" href="create_post.css">
-    <!-- <link rel="stylesheet" href="../../public/post.css"> -->
 </head>
 
 <body>
@@ -35,14 +34,12 @@
                 <div class="post-header">
                     <div class="user-info">
                         <img src="user.png" class="post-avatar" alt="User Avatar">
-                        <!-- <img src="../../public/user.png" class="post-avatar" alt="User Avatar"> -->
                         <div>
                             <h3 id="post-username">User</h3>
-                            <select class="category-dropdown">
-                            </select>
+                            <select class="category-dropdown"></select>
                         </div>
                     </div>
-                    <button class="post-btn" onclick="window.location.href='/'">โพสต์</button>
+                    <button class="post-btn">โพสต์</button>
                 </div>
 
                 <!-- หัวข้อโพสต์ -->
@@ -65,7 +62,7 @@
     </div>
 
     <!-- Popup modal -->
-    <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-overlay" id="modal-overlay" style="display:none;">
         <div class="modal">
             <h2>สร้างหมวดหมู่ใหม่</h2>
             <input type="text" id="category-name" placeholder="ใส่ชื่อหมวดหมู่ใหม่..." />
@@ -100,14 +97,6 @@
         const imgBtn = document.querySelector('.img-btn');
         const imageInput = document.getElementById('imageInput');
 
-        /* ฟังก์ชันสร้าง textarea ใหม่ */
-        function createTextArea() {
-            const textarea = document.createElement('textarea');
-            textarea.classList.add('post-text');
-            textarea.placeholder = "เขียนสิ่งที่คุณต้องการแชร์...";
-            return textarea;
-        }
-
         // เก็บข้อมูลรูปและโค้ดในตัวแปร
         let uploadedImages = [];
         let codeBlocks = [];
@@ -127,10 +116,10 @@
             const codeBlock = document.createElement('div');
             codeBlock.classList.add('code-block');
             codeBlock.innerHTML = `
-        <button class="close-btn">&times;</button>
-        <div class="code-header">Python</div>
-        <textarea class="code-content" placeholder="เขียนโค้ดของคุณที่นี่..."></textarea>
-    `;
+                <button class="close-btn">&times;</button>
+                <div class="code-header">Python</div>
+                <textarea class="code-content" placeholder="เขียนโค้ดของคุณที่นี่..."></textarea>
+            `;
 
             codeBlock.querySelector('.close-btn').addEventListener('click', () => {
                 codeBlocks = codeBlocks.filter(code => code.id !== codeData.id);
@@ -172,9 +161,9 @@
                 const wrapper = document.createElement('div');
                 wrapper.classList.add('image-wrapper');
                 wrapper.innerHTML = `
-            <button class="close-btn">&times;</button>
-            <img src="${imageData.data}" alt="Preview Image">
-        `;
+                    <button class="close-btn">&times;</button>
+                    <img src="${imageData.data}" alt="Preview Image">
+                `;
 
                 wrapper.querySelector('.close-btn').addEventListener('click', () => {
                     uploadedImages = uploadedImages.filter(img => img.id !== imageData.id);
@@ -205,7 +194,6 @@
             window.location.href = '/profile';
         });
 
-
         // เปิด popup
         const modal = document.getElementById("modal-overlay");
         document.querySelector(".new-category-btn").addEventListener("click", () => {
@@ -220,17 +208,24 @@
         });
 
         // ปุ่มบันทึก
-        document.getElementById("save-btn").addEventListener("click", () => {
+        document.getElementById("save-btn").addEventListener("click", async () => {
             const name = document.getElementById("category-name").value.trim();
-            if (name) {
-                const ul = document.querySelector(".category-list");
-                const li = document.createElement("li");
-                li.textContent = name;
-                ul.appendChild(li);
-                document.getElementById("category-name").value = "";
-                modal.style.display = "none";
+            if (!name) return;
+            // เพิ่มหมวดหมู่ใหม่ลง backend
+            const res = await fetch('/categories', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            if (res.ok) {
+                await fetchCategories();
             }
+            document.getElementById("category-name").value = "";
+            modal.style.display = "none";
         });
+
+        let categories = [];
         async function fetchCategories() {
             const res = await fetch('/categories', { credentials: 'include' });
             categories = await res.json();
@@ -244,7 +239,6 @@
                 const li = document.createElement('li');
                 li.textContent = cat.name;
                 li.addEventListener('click', () => {
-                    // เปลี่ยนหน้าไป homepage พร้อมส่ง categoryId เป็น query string
                     window.location.href = `/?categoryId=${encodeURIComponent(cat.id)}`;
                 });
                 list.appendChild(li);
@@ -270,34 +264,47 @@
         document.querySelector('.post-btn').addEventListener('click', async (e) => {
             e.preventDefault();
 
-            // ตรวจสอบข้อมูลก่อนส่ง
-            const formData = {
-                title: document.querySelector('.post-title').value.trim(),
-                text: document.querySelector('.post-text').value.trim(),
-                categoryId: document.querySelector('.category-dropdown').value,
-                images: uploadedImages.map(img => img.data).filter(Boolean),
-                codes: codeBlocks.map(code => code.code).filter(code => code.trim())
-            };
+            const title = document.querySelector('.post-title').value.trim();
+            const text = document.querySelector('.post-text').value.trim();
+            const categoryId = document.querySelector('.category-dropdown').value;
+            const codes = codeBlocks.map(code => code.code).filter(code => code.trim());
 
-            // Validate required fields
-            if (!formData.title || !formData.categoryId) {
-                alert('Please fill in all required fields');
+            if (!title || !categoryId) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
                 return;
             }
 
+            const formData = new FormData();
+            formData.append("title", title);
+            formData.append("text", text);
+            formData.append("categoryId", categoryId);
+            codes.forEach(code => formData.append("codes", code));
+
+            // แนบไฟล์ภาพ
+            for (const img of uploadedImages) {
+                // img.data เป็น base64 dataURL ต้องแปลงเป็นไฟล์ Blob
+                const arr = img.data.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while (n--) u8arr[n] = bstr.charCodeAt(n);
+                const file = new File([u8arr], `image_${img.id}.png`, { type: mime });
+                formData.append("images", file);
+            }
+            Array.from(formData.entries()).forEach(([key, value]) => {
+                console.log(key, value);
+            });
             const res = await fetch('/posts', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify(formData)
+                body: formData,
+                credentials: 'include'
             });
 
             if (!res.ok) {
                 const error = await res.json();
-                throw new Error(error.message || 'Failed to create post');
+                alert(error.message || 'Failed to create post');
+                return;
             }
 
             window.location.href = '/';
