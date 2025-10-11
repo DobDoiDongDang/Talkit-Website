@@ -6,6 +6,7 @@ import { authRoute } from "./routes/auth.js";
 import { postRoute } from "./routes/post.js";
 import { homeRoute } from "./routes/home.js";
 import { getCookie } from "hono/cookie";
+
 import 'dotenv/config';
 
 const app = new Hono();

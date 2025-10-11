@@ -79,6 +79,7 @@
       let url = categoryId ? `/posts?categoryId=${categoryId}` : '/posts/me';
       const res = await fetch(url, { credentials: 'include' });
       posts = await res.json();
+      console.log(posts)
       renderPosts();
     }
 
@@ -115,7 +116,7 @@
             </div>
             <span class="category">หมวดหมู่ : ${escapeHtml(post.categoryName || String(post.categoryId || ''))}</span>
           </div>
-          <p class="post-content">${escapeHtml(post.title || '')}</p>
+          <h2 class="post-content">${escapeHtml(post.title || '')}</h2>
           <p class="post-snippet">${escapeHtml(post.text || '').slice(0, 300)}${(post.text || '').length > 300 ? '...' : ''}</p>
           <div class="post-footer"><small>${escapeHtml(time)}</small></div>
         `;
@@ -130,6 +131,8 @@
     // Initial load
     fetchCategories();
     fetchPosts();
+
+
 
     // Sidebar profile click
     document.querySelector('.sidebar .avatar').addEventListener('click', () => {

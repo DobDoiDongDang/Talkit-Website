@@ -37,17 +37,12 @@
                         <img src="user.png" class="post-avatar" alt="User Avatar">
                         <!-- <img src="../../public/user.png" class="post-avatar" alt="User Avatar"> -->
                         <div>
-                            <h3>John Talkit</h3>
+                            <h3 id="post-username">User</h3>
                             <select class="category-dropdown">
-                                <option value="ปัญหาโค้ด">ปัญหาโค้ด 🐍</option>
-                                <option value="ปัญหาชีวิต">ปัญหาชีวิต 💭</option>
-                                <option value="ปัญสังคม">ปัญหาสังคม 🌐</option>
-                                <option value="หาเพื่อนกิน">หาเพื่อนกินข้าว 🍴</option>
-                                <option value="กินโรตี">กินโรตีดีส้ม 🥙</option>
                             </select>
                         </div>
                     </div>
-                    <button class="post-btn" onclick="window.location.href='homepage.html'">โพสต์</button>
+                    <button class="post-btn" onclick="window.location.href='/'">โพสต์</button>
                 </div>
 
                 <!-- หัวข้อโพสต์ -->
@@ -96,7 +91,9 @@
         }
         if (currentUser && currentUser.username) {
             const unameEl = document.getElementById('username');
+            const uname = document.getElementById('post-username');
             if (unameEl) unameEl.textContent = currentUser.username;
+            if (uname) uname.textContent = currentUser.username;
         }
         const postContent = document.getElementById('postContent');
         const codeBtn = document.querySelector('.code-btn');
@@ -111,10 +108,21 @@
             return textarea;
         }
 
+        // เก็บข้อมูลรูปและโค้ดในตัวแปร
+        let uploadedImages = [];
+        let codeBlocks = [];
+
         /* เพิ่ม code block แยก container */
         codeBtn.addEventListener('click', () => {
+            const codeData = {
+                id: Date.now(),
+                code: ''
+            };
+            codeBlocks.push(codeData);
+
             const postItem = document.createElement('div');
             postItem.classList.add('post-item');
+            postItem.dataset.codeId = codeData.id;
 
             const codeBlock = document.createElement('div');
             codeBlock.classList.add('code-block');
@@ -122,16 +130,21 @@
         <button class="close-btn">&times;</button>
         <div class="code-header">Python</div>
         <textarea class="code-content" placeholder="เขียนโค้ดของคุณที่นี่..."></textarea>
-        <div class="code-footer">
-            <span>Result:</span>
-            <button class="run-btn">Run</button>
-        </div>
     `;
 
-            codeBlock.querySelector('.close-btn').addEventListener('click', () => postItem.remove());
+            codeBlock.querySelector('.close-btn').addEventListener('click', () => {
+                codeBlocks = codeBlocks.filter(code => code.id !== codeData.id);
+                postItem.remove();
+            });
+
+            codeBlock.querySelector('.code-content').addEventListener('input', (e) => {
+                const index = codeBlocks.findIndex(code => code.id === codeData.id);
+                if (index !== -1) {
+                    codeBlocks[index].code = e.target.value;
+                }
+            });
 
             postItem.appendChild(codeBlock);
-            postItem.appendChild(createTextArea()); // textarea ต่อท้าย
 
             postContent.appendChild(postItem);
             postItem.scrollIntoView({ behavior: 'smooth' });
@@ -146,17 +159,27 @@
 
             const reader = new FileReader();
             reader.onload = function (event) {
+                const imageData = {
+                    id: Date.now(), // temp id for frontend
+                    data: event.target.result
+                };
+                uploadedImages.push(imageData);
+
                 const postItem = document.createElement('div');
                 postItem.classList.add('post-item');
+                postItem.dataset.imageId = imageData.id;
 
                 const wrapper = document.createElement('div');
                 wrapper.classList.add('image-wrapper');
                 wrapper.innerHTML = `
             <button class="close-btn">&times;</button>
-            <img src="${event.target.result}" alt="Preview Image">
+            <img src="${imageData.data}" alt="Preview Image">
         `;
 
-                wrapper.querySelector('.close-btn').addEventListener('click', () => postItem.remove());
+                wrapper.querySelector('.close-btn').addEventListener('click', () => {
+                    uploadedImages = uploadedImages.filter(img => img.id !== imageData.id);
+                    postItem.remove();
+                });
 
                 // กำหนดขนาดรูป
                 const img = wrapper.querySelector('img');
@@ -169,7 +192,6 @@
                 wrapper.style.position = "relative";
 
                 postItem.appendChild(wrapper);
-                postItem.appendChild(createTextArea());
 
                 postContent.appendChild(postItem);
                 postItem.scrollIntoView({ behavior: 'smooth' });
@@ -231,6 +253,55 @@
 
         // Initial load
         fetchCategories();
+
+        async function loadCategories() {
+            const res = await fetch('/categories', { credentials: 'include' });
+            const categories = await res.json();
+
+            const dropdown = document.querySelector('.category-dropdown');
+            dropdown.innerHTML = categories.map(cat =>
+                `<option value="${cat.id}">${cat.name}</option>`
+            ).join('');
+        }
+
+        // Call on page load
+        loadCategories();
+
+        document.querySelector('.post-btn').addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            // ตรวจสอบข้อมูลก่อนส่ง
+            const formData = {
+                title: document.querySelector('.post-title').value.trim(),
+                text: document.querySelector('.post-text').value.trim(),
+                categoryId: document.querySelector('.category-dropdown').value,
+                images: uploadedImages.map(img => img.data).filter(Boolean),
+                codes: codeBlocks.map(code => code.code).filter(code => code.trim())
+            };
+
+            // Validate required fields
+            if (!formData.title || !formData.categoryId) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const res = await fetch('/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(formData)
+            });
+
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || 'Failed to create post');
+            }
+
+            window.location.href = '/';
+        });
     </script>
 </body>
 
