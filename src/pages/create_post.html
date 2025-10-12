@@ -55,7 +55,8 @@
                     <button class="img-btn">แนบรูปภาพ</button>
                     <button class="code-btn">เพิ่มโค้ด</button>
                     <button class="cancel-btn" onclick="window.location.href='homepage.html'">ยกเลิก</button>
-                    <input style="display: none;" type="file" id="imageInput" name="images" accept="image/*" multiple>
+                    <!-- เปลี่ยน name เป็น images[] เพื่อให้ backend รวมเป็น array -->
+                    <input style="display: none;" type="file" id="imageInput" name="images[]" accept="image/*" multiple>
                 </div>
             </div>
         </main>
@@ -282,10 +283,11 @@
             formData.append("categoryId", categoryId);
             codes.forEach(code => formData.append("codes", code));
 
-            // แนบไฟล์ภาพจาก input.files
+            // ส่งไฟล์ทุกไฟล์ด้วย key เดิม images[]
             for (const file of imageInput.files) {
-                formData.append("images", file);
+              formData.append("images", file);
             }
+
             const res = await fetch('/posts', {
                 method: 'POST',
                 body: formData,

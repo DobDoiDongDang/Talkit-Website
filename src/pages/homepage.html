@@ -76,7 +76,8 @@
     }
 
     async function fetchPosts(categoryId = null) {
-      let url = categoryId ? `/posts/${categoryId}` : '/posts/me';
+      // แก้ให้เรียกตาม API ใหม่
+      const url = categoryId ? `/posts/category/${categoryId}` : '/posts/me';
       const res = await fetch(url, { credentials: 'include' });
       posts = await res.json();
       renderPosts();
@@ -102,6 +103,7 @@
         const card = document.createElement('div');
         card.className = 'post-card';
         card.onclick = () => {
+          // เปิดหน้าอ่านโพสต์
           window.location.href = `/post?id=${post.id}`;
         };
         const author = post.username || (currentUser && currentUser.username) || post.userId || 'ไม่ระบุ';

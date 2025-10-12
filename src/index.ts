@@ -24,7 +24,7 @@ app.route("auth", authRoute);
 app.use("/*", serveStatic({ root: "./public" }));
 app.use("/*", authMiddleware);
 app.route("/", homeRoute);
-app.route("post", postRoute);
+app.route("posts", postRoute);
 app.get("/logout", (c) => {
   // ลบ cookie token โดยตั้ง Max-Age=0
   c.header("Set-Cookie", "token=; HttpOnly; Path=/; Max-Age=0; Secure");
