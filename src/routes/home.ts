@@ -23,10 +23,10 @@ const s3 = new S3Client({
   },
 });
 
-export async function uploadImageToS3(buffer: ArrayBuffer | Uint8Array | Buffer, userId: number, mimetype: string) {
+export async function postImageUpload(buffer: ArrayBuffer | Uint8Array | Buffer, userId: number, mimetype: string) {
   const imageId = uuidv4();
   const ext = mimetype.split("/")[1] || "jpg";
-  const key = `${imageId}.${ext}`;
+  const key = `post/${userId}/${imageId}.${ext}`;
 
   // Ensure Body is a Buffer/Uint8Array (types accepted by PutObjectCommand)
   const body = Buffer.isBuffer(buffer) || buffer instanceof Uint8Array ? buffer : Buffer.from(buffer);
@@ -157,10 +157,9 @@ const upload = multer();
 // เพิ่มโพสต์ใหม่ (รองรับ multipart/form-data)
 homeRoute.post("/posts", async (c: any) => {
   try {
-    const body = await c.req.parseBody();
-    console.log(body)
-    const files = body['images'] as File;
-
+    const body = await c.req.parseBody({ all: true });
+    let files = body['images'];
+    console.log(files);
 
     const { title, text, categoryId } = body;
     const categoryIdNum = Number(categoryId);
@@ -190,11 +189,14 @@ homeRoute.post("/posts", async (c: any) => {
 
       // 2. อัปโหลดรูปไป S3 และบันทึก url
       if (files) {
-          const url = await uploadImageToS3(await files.arrayBuffer(), user.id, files.type);
+        files.forEach(async (file: File) => {
+          const buffer = await file.arrayBuffer();
+          const url = await postImageUpload(buffer, user.id, file.type);
           await tx.insert(post_picture).values({
             postId: post.id,
             url,
           });
+        });
       }
 
       // 3. เพิ่ม code blocks

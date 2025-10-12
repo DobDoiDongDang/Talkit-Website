@@ -55,7 +55,7 @@
                     <button class="img-btn">แนบรูปภาพ</button>
                     <button class="code-btn">เพิ่มโค้ด</button>
                     <button class="cancel-btn" onclick="window.location.href='homepage.html'">ยกเลิก</button>
-                    <input type="file" id="imageInput" accept="image/*" style="display:none">
+                    <input style="display: none;" type="file" id="imageInput" name="images" accept="image/*" multiple>
                 </div>
             </div>
         </main>
@@ -143,50 +143,52 @@
         imgBtn.addEventListener('click', () => imageInput.click());
 
         imageInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
 
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                const imageData = {
-                    id: Date.now(), // temp id for frontend
-                    data: event.target.result
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const imageData = {
+                        id: Date.now(), // temp id for frontend
+                        data: event.target.result
+                    };
+                    uploadedImages.push(imageData);
+
+                    const postItem = document.createElement('div');
+                    postItem.classList.add('post-item');
+                    postItem.dataset.imageId = imageData.id;
+
+                    const wrapper = document.createElement('div');
+                    wrapper.classList.add('image-wrapper');
+                    wrapper.innerHTML = `
+                        <button class="close-btn">&times;</button>
+                        <img src="${imageData.data}" alt="Preview Image">
+                    `;
+
+                    wrapper.querySelector('.close-btn').addEventListener('click', () => {
+                        uploadedImages = uploadedImages.filter(img => img.id !== imageData.id);
+                        postItem.remove();
+                    });
+
+                    // กำหนดขนาดรูป
+                    const img = wrapper.querySelector('img');
+                    img.style.maxWidth = "100%";
+                    img.style.maxHeight = "250px";
+                    img.style.borderRadius = "8px";
+                    wrapper.style.border = "1px solid #007bff";
+                    wrapper.style.padding = "8px";
+                    wrapper.style.marginBottom = "10px";
+                    wrapper.style.position = "relative";
+
+                    postItem.appendChild(wrapper);
+
+                    postContent.appendChild(postItem);
+                    postItem.scrollIntoView({ behavior: 'smooth' });
                 };
-                uploadedImages.push(imageData);
+                reader.readAsDataURL(file);
+            });
 
-                const postItem = document.createElement('div');
-                postItem.classList.add('post-item');
-                postItem.dataset.imageId = imageData.id;
-
-                const wrapper = document.createElement('div');
-                wrapper.classList.add('image-wrapper');
-                wrapper.innerHTML = `
-                    <button class="close-btn">&times;</button>
-                    <img src="${imageData.data}" alt="Preview Image">
-                `;
-
-                wrapper.querySelector('.close-btn').addEventListener('click', () => {
-                    uploadedImages = uploadedImages.filter(img => img.id !== imageData.id);
-                    postItem.remove();
-                });
-
-                // กำหนดขนาดรูป
-                const img = wrapper.querySelector('img');
-                img.style.maxWidth = "100%";
-                img.style.maxHeight = "250px";
-                img.style.borderRadius = "8px";
-                wrapper.style.border = "1px solid #007bff";
-                wrapper.style.padding = "8px";
-                wrapper.style.marginBottom = "10px";
-                wrapper.style.position = "relative";
-
-                postItem.appendChild(wrapper);
-
-                postContent.appendChild(postItem);
-                postItem.scrollIntoView({ behavior: 'smooth' });
-            };
-            reader.readAsDataURL(file);
-            imageInput.value = "";
         });
 
         // Sidebar profile click
@@ -280,21 +282,10 @@
             formData.append("categoryId", categoryId);
             codes.forEach(code => formData.append("codes", code));
 
-            // แนบไฟล์ภาพ
-            for (const img of uploadedImages) {
-                // img.data เป็น base64 dataURL ต้องแปลงเป็นไฟล์ Blob
-                const arr = img.data.split(',');
-                const mime = arr[0].match(/:(.*?);/)[1];
-                const bstr = atob(arr[1]);
-                let n = bstr.length;
-                const u8arr = new Uint8Array(n);
-                while (n--) u8arr[n] = bstr.charCodeAt(n);
-                const file = new File([u8arr], `image_${img.id}.png`, { type: mime });
+            // แนบไฟล์ภาพจาก input.files
+            for (const file of imageInput.files) {
                 formData.append("images", file);
             }
-            Array.from(formData.entries()).forEach(([key, value]) => {
-                console.log(key, value);
-            });
             const res = await fetch('/posts', {
                 method: 'POST',
                 body: formData,
