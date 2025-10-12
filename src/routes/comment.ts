@@ -107,7 +107,7 @@ commentRoute.post('/comments', async (c) => {
   }
 });
 
-// GET /posts/:postId/comments  -> list comments with pictures and codes
+// GET /posts/:postId/comments -> include userProfile
 commentRoute.get('/:postId/comments', async (c) => {
   try {
     const postId = Number(c.req.param('postId'));
@@ -121,8 +121,7 @@ commentRoute.get('/:postId/comments', async (c) => {
         text: comments.text,
         createdAt: comments.createdAt,
         username: users.username,
-        // [add] เลือก avatar ของผู้คอมเมนต์ (แก้ชื่อคอลัมน์ให้ตรง schema)
-        avatarUrl: (users as any).avatarUrl, // e.g. users.avatarUrl / users.imageUrl / users.photoUrl
+        userProfile: users.userProfile,
       })
       .from(comments)
       .leftJoin(users, eq(comments.userId, users.id))
@@ -155,7 +154,7 @@ commentRoute.get('/:postId/comments', async (c) => {
       postId: r.postId,
       userId: r.userId,
       username: r.username,
-      avatarUrl: r.avatarUrl ?? null, // [add]
+      userProfile: r.userProfile ?? null,
       text: r.text,
       createdAt: r.createdAt,
       pictures: picturesByCmt.get(r.id) ?? [],

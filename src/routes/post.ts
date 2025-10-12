@@ -141,7 +141,7 @@ async function uploadToS3(
 
 // Add BEFORE the "/:postid" route to avoid param conflicts
 
-// GET /posts/me - user’s posts
+// GET /posts/me - include username & userProfile
 postRoute.get("/me", async (c) => {
   try {
     const userCookie = getCookie(c, "user");
@@ -157,9 +157,12 @@ postRoute.get("/me", async (c) => {
         categoryId: posts.categoryId,
         categoryName: categories.name,
         createdAt: posts.createdAt,
+        username: users.username,
+        userProfile: users.userProfile,
       })
       .from(posts)
       .leftJoin(categories, eq(posts.categoryId, categories.id))
+      .leftJoin(users, eq(posts.userId, users.id))
       .where(eq(posts.userId, user.id))
       .orderBy(desc(posts.createdAt));
     return c.json(postslist);
@@ -169,8 +172,7 @@ postRoute.get("/me", async (c) => {
   }
 });
 
-// GET /posts/category/:categoryId - posts by category
-// Note: Using '/category/:categoryId' to avoid conflict with '/:postid'
+// GET /posts/category/:categoryId - include username & userProfile
 postRoute.get("/category/:categoryId", async (c) => {
   try {
     const categoryId = Number(c.req.param("categoryId"));
@@ -187,9 +189,12 @@ postRoute.get("/category/:categoryId", async (c) => {
         categoryId: posts.categoryId,
         categoryName: categories.name,
         createdAt: posts.createdAt,
+        username: users.username,
+        userProfile: users.userProfile,
       })
       .from(posts)
       .leftJoin(categories, eq(posts.categoryId, categories.id))
+      .leftJoin(users, eq(posts.userId, users.id))
       .where(eq(posts.categoryId, categoryId))
       .orderBy(desc(posts.createdAt));
 
@@ -204,47 +209,37 @@ postRoute.get("/:postid", async (c) => {
   const postId = Number(c.req.param("postid"));
   if (!postId) return c.json({ error: "Invalid post id" }, 400);
 
-  // ดึงโพสต์
-  const post = await db.query.posts.findFirst({
-    where: eq(posts.id, postId),
-  });
+  const post = await db.query.posts.findFirst({ where: eq(posts.id, postId) });
   if (!post) return c.json({ error: "Post not found" }, 404);
 
-  // ดึงชื่อ user เจ้าของโพสต์
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, post.userId),
-  });
+  const user = await db.query.users.findFirst({ where: eq(users.id, post.userId) });
 
-  // ดึงโค้ดและรูปของโพสต์
   const codes = await db.select().from(post_code).where(eq(post_code.postId, postId));
   const pictures = await db.select().from(post_picture).where(eq(post_picture.postId, postId));
 
-  // ดึงคอมเมนต์ทั้งหมดของโพสต์
   const commentList = await db.select().from(comments).where(eq(comments.postId, postId));
 
-  // สำหรับแต่ละคอมเมนต์ ดึงชื่อ user, โค้ด, รูป
   const commentsWithDetail = await Promise.all(commentList.map(async (comment) => {
-    const commentUser = await db.query.users.findFirst({
-      where: eq(users.id, comment.userId),
-    });
+    const commentUser = await db.query.users.findFirst({ where: eq(users.id, comment.userId) });
     const commentCodes = await db.select().from(comment_code).where(eq(comment_code.commentId, comment.id));
     const commentPictures = await db.select().from(comment_picture).where(eq(comment_picture.commentId, comment.id));
     return {
       ...comment,
       username: commentUser?.username ?? "Anon",
+      userProfile: (commentUser as any)?.userProfile ?? null,
       codes: commentCodes,
       pictures: commentPictures,
     };
   }));
 
-  // เพิ่ม username เจ้าของโพสต์ใน response
-  const postWithUsername = {
+  const postWithUser = {
     ...post,
-    username: user?.username ?? "Anon"
+    username: user?.username ?? "Anon",
+    userProfile: (user as any)?.userProfile ?? null,
   };
 
   return c.json({
-    post: postWithUsername,
+    post: postWithUser,
     codes,
     pictures,
     comments: commentsWithDetail,

@@ -30,8 +30,8 @@
     <!-- Main Content -->
     <main class="main-content">
       <h1>กระดานของฉัน</h1>
-      <div class="posts" id="posts"></div>
       <button class="new-board-btn" onclick="window.location.href='/createpost'">สร้างกระดานใหม่</button>
+      <div class="posts" id="posts"></div>
     </main>
   </div>
 
@@ -54,16 +54,27 @@
       return v ? decodeURIComponent(v.pop()) : null;
     }
 
-    // get user from cookie and set username in UI
-    let currentUser = null;
-    const userCookie = readCookie('user');
-    if (userCookie) {
-      try { currentUser = JSON.parse(userCookie); } catch (e) { currentUser = null; }
+    async function hydrateSidebarProfile() {
+      let user = null;
+      const raw = readCookie('user');
+      if (raw) { try { user = JSON.parse(raw); } catch {} }
+
+      // ถ้า cookie ยังไม่มี/ไม่ครบ ลองเรียกโปรไฟล์จาก API
+      if (!user || !user.userProfile || !user.username) {
+        try {
+          const res = await fetch('/profiles/me', { credentials: 'include' });
+          if (res.ok) user = await res.json();
+        } catch {}
+      }
+
+      const avatarEl = document.querySelector('.sidebar .avatar');
+      const nameEl = document.querySelector('.sidebar #username');
+      if (avatarEl) avatarEl.src = (user && user.userProfile) ? user.userProfile : 'user.png';
+      if (nameEl && user && user.username) nameEl.textContent = user.username;
     }
-    if (currentUser && currentUser.username) {
-      const unameEl = document.getElementById('username');
-      if (unameEl) unameEl.textContent = currentUser.username;
-    }
+
+    // เรียกใช้งานเมื่อโหลดหน้า
+    hydrateSidebarProfile();
 
     let categories = [];
     let posts = [];
@@ -102,16 +113,14 @@
       posts.forEach(post => {
         const card = document.createElement('div');
         card.className = 'post-card';
-        card.onclick = () => {
-          // เปิดหน้าอ่านโพสต์
-          window.location.href = `/post?id=${post.id}`;
-        };
-        const author = post.username || (currentUser && currentUser.username) || post.userId || 'ไม่ระบุ';
+        card.onclick = () => { window.location.href = `/post?id=${post.id}`; };
+        const author = post.username || (currentUser && currentUser.username) || 'ไม่ระบุ';
+        const avatar = post.userProfile || 'user.png';
         const time = post.created_at ? new Date(post.created_at).toLocaleString() : '';
         card.innerHTML = `
           <div class="post-header">
             <div class="user-info">
-              <img src="user.png" alt="User" class="post-avatar">
+              <img src="${escapeHtml(avatar)}" alt="User" class="post-avatar">
               <span class="username">${escapeHtml(author)}</span>
             </div>
             <span class="category">หมวดหมู่ : ${escapeHtml(post.categoryName || String(post.categoryId || ''))}</span>

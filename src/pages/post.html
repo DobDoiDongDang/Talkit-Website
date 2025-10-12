@@ -46,22 +46,41 @@
   </div>
 
   <script>
+    fetchCategories();
     // helper to read cookie (non httpOnly)
     function readCookie(name) {
       const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
       return v ? decodeURIComponent(v.pop()) : null;
     }
 
+    async function hydrateSidebarProfile() {
+      let user = null;
+      const raw = readCookie('user');
+      if (raw) { try { user = JSON.parse(raw); } catch {} }
+      if (!user || !user.userProfile || !user.username) {
+        try {
+          const res = await fetch('/profiles/me', { credentials: 'include' });
+          if (res.ok) user = await res.json();
+        } catch {}
+      }
+      const avatarEl = document.querySelector('.sidebar .avatar');
+      const nameEl = document.querySelector('.sidebar #username');
+      if (avatarEl) avatarEl.src = (user && user.userProfile) ? user.userProfile : 'user.png';
+      if (nameEl && user?.username) nameEl.textContent = user.username;
+    }
+
+    hydrateSidebarProfile();
+
     // get user from cookie and set username in UI
     let currentUser = null;
     const userCookie = readCookie('user');
-    if (userCookie) {
-      try { currentUser = JSON.parse(userCookie); } catch (e) { currentUser = null; }
-    }
+    if (userCookie) { try { currentUser = JSON.parse(userCookie); } catch { currentUser = null; } }
     if (currentUser && currentUser.username) {
       const unameEl = document.getElementById('username');
       if (unameEl) unameEl.textContent = currentUser.username;
     }
+    const sidebarAvatar = document.querySelector('.sidebar .avatar');
+    if (sidebarAvatar) sidebarAvatar.src = (currentUser && currentUser.userProfile) ? currentUser.userProfile : 'user.png';
 
     let categories = [];
     let selectedCategory = null;
@@ -147,7 +166,7 @@
       let html = `
         <div class="post-header">
           <div class="user-info">
-            <img src="user.png" class="post-avatar" alt="User Avatar" />
+            <img src="${escapeHtml(post.userProfile || 'user.png')}" class="post-avatar" alt="User Avatar" />
             <div><h3>${escapeHtml(post.username || 'Anon')}</h3></div>
           </div>
         </div>
@@ -171,10 +190,9 @@
         });
       }
 
-      html += `<hr />`;
-
-      // ฟอร์มคอมเมนต์ (เพิ่มปุ่มเพิ่มโค้ด และ preview รูป)
+      // เปลี่ยนจาก "..." เป็นฟอร์มคอมเมนต์จริง
       html += `
+        <hr />
         <div class="comment-section">
           <h4>แสดงความคิดเห็น</h4>
           <textarea class="comment-input" placeholder="พิมพ์ความคิดเห็นของคุณ..."></textarea>
@@ -196,7 +214,7 @@
         comments.forEach(comment => {
           html += `
           <div class="single-comment">
-            <img src="user.png" class="comment-avatar" alt="" />
+            <img src="${escapeHtml(comment.userProfile || 'user.png')}" class="comment-avatar" alt="" />
             <div class="comment-content">
               <h5>${escapeHtml(comment.username || 'Anon')}</h5>
               <p>${escapeHtml(comment.text)}</p>
@@ -218,7 +236,6 @@
             });
           }
           html += `
-              <button class="like-btn">Like</button>
             </div>
           </div>
           `;
@@ -230,7 +247,7 @@
 
       document.getElementById('post-box').innerHTML = html;
 
-      // ติดตั้ง logic คอมเมนต์ (แนบหลายรูป + โค้ดหลายบล็อก)
+      // ติดตั้ง logic คอมเมนต์
       setupCommentComposer(post.id);
     }
 

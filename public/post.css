@@ -556,6 +556,67 @@ body {
   border: 1px solid #e0e0ff;
 }
 
+/* Lock size for images displayed in post detail */
+.post-pictures {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.post-pictures .post-img {
+  width: 240px;              /* fixed box */
+  height: 240px;             /* fixed box */
+  object-fit: cover;         /* crop to center */
+  border-radius: 8px;
+  border: 1px solid #e0e0ff;
+  box-shadow: 0 2px 8px rgba(0, 91, 255, 0.08);
+}
+
+/* Reuse create_post preview styles for comment image preview in post */
+.comment-section .image-wrapper {
+  position: relative;
+  margin-bottom: 15px;
+  border: 1px solid #007bff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 91, 255, 0.2);
+  background: #f8faff;
+  padding: 8px;
+}
+.comment-section .image-wrapper img {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 8px;
+  display: block;
+}
+
+/* Fallback: ถ้า JS ไม่ได้ใส่ class .image-wrapper ให้ใช้สไตล์กับ div ลูกใน preview */
+#comment-image-preview > div {
+  position: relative;
+  border: 1px solid #007bff;
+  border-radius: 8px;
+  background: #f8faff;
+  box-shadow: 0 4px 12px rgba(0, 91, 255, 0.2);
+  padding: 8px;
+}
+
+/* Override preview image size in post to match create_post */
+#comment-image-preview img {
+  max-width: 100%;
+  max-height: 250px; /* was 120px, now same as create_post */
+  object-fit: cover;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+/* Fixed size for images displayed inside comments */
+.comment-pictures .comment-img {
+  width: 140px;      /* fixed box */
+  height: 140px;     /* fixed box */
+  object-fit: cover; /* crop to center */
+  border-radius: 8px;
+  border: 1px solid #e0e0ff;
+}
+
 /* ป้องกันรูปโปรไฟล์ยืด/บิด */
 .post-avatar, .comment-avatar {
   object-fit: cover;

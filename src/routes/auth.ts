@@ -51,7 +51,6 @@ authRoute.get("/", async (c) => {
 
 authRoute.post("/login", async (c) => {
   const { username, password } = await c.req.json();
-
   try {
     const command = new InitiateAuthCommand({
       AuthFlow: "USER_PASSWORD_AUTH",
@@ -95,20 +94,17 @@ authRoute.post("/login", async (c) => {
     });
 
     // เก็บข้อมูล user ที่จำเป็นให้ frontend อ่านได้ (ไม่ต้องเก็บ sensitive)
-    const userInfo = JSON.stringify({ id: dbUser.id, username: dbUser.username, email });
+    const userInfo = JSON.stringify({
+      id: dbUser.id,
+      username: dbUser.username,
+      email,
+      userProfile: (dbUser as any).userProfile ?? null, // add profile to cookie
+    });
     setCookie(c, "user", userInfo, {
-      httpOnly: false,
-      secure: true,
-      sameSite: "Lax",
-      path: "/",
-      maxAge: 60 * 60,
+      httpOnly: false, secure: true, sameSite: "Lax", path: "/", maxAge: 60 * 60,
     });
 
-    return c.json({
-      success: true,
-      redirect: "/",
-      message: "เข้าสู่ระบบสำเร็จ",
-    });
+    return c.json({ success: true, redirect: "/", message: "เข้าสู่ระบบสำเร็จ" });
   } catch (err: any) {
     if (err.name === "UserNotConfirmedException") {
       return c.json({ success: false, redirect: "/confirm", message: "บัญชียังไม่ยืนยัน" });

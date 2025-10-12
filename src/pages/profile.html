@@ -78,29 +78,89 @@
     </div>
   </div>
   <script>
-    // helper to read cookie (non httpOnly)
-    function readCookie(name) {
-      const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-      return v ? decodeURIComponent(v.pop()) : null;
+    // set sidebar avatar from cookie or profiles API
+    function readCookie(name){ const v=document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)'); return v?decodeURIComponent(v.pop()):null; }
+
+    async function hydrateSidebarProfile() {
+      let user = null;
+      const raw = readCookie('user');
+      if (raw) { try { user = JSON.parse(raw); } catch {} }
+      if (!user || !user.userProfile || !user.username) {
+        try {
+          const res = await fetch('/profiles/me', { credentials: 'include' });
+          if (res.ok) user = await res.json();
+        } catch {}
+      }
+      const avatarEl = document.querySelector('.sidebar .avatar');
+      const nameEl = document.querySelector('.sidebar #username');
+      if (avatarEl) avatarEl.src = (user && user.userProfile) ? user.userProfile : 'user.png';
+      if (nameEl && user?.username) nameEl.textContent = user.username;
     }
 
-    // get user from cookie and set username in UI
-    let currentUser = null;
-    const userCookie = readCookie('user');
-    if (userCookie) {
-      try { currentUser = JSON.parse(userCookie); } catch (e) { currentUser = null; }
-    }
-    if (currentUser && currentUser.username) {
-      const unameEl = document.getElementById('username');
-      if (unameEl) unameEl.textContent = currentUser.username;
+    hydrateSidebarProfile();
+
+    // load profile from API
+    async function loadProfile() {
+      const res = await fetch('/profiles/me', { credentials: 'include' });
+      if (!res.ok) return;
+      const me = await res.json();
+      const unameInput = document.querySelector('input#username');
+      const emailInput = document.querySelector('input#email');
+      const avatarImg = document.getElementById('avatarPreview');
+
+      if (unameInput && me.username) unameInput.value = me.username;
+      if (emailInput && me.email) emailInput.value = me.email;
+      if (avatarImg) avatarImg.src = me.userProfile || 'user.png';
     }
 
-    // Sidebar profile click
-    document.querySelector('.sidebar .avatar').addEventListener('click', () => {
-      window.location.href = '/profile';
-    });
+    // preview avatar on select
+    const avatarInput = document.getElementById('avatar');
+    const avatarPreview = document.getElementById('avatarPreview');
+    if (avatarInput) {
+      avatarInput.addEventListener('change', (e) => {
+        const file = avatarInput.files && avatarInput.files[0];
+        if (file) {
+          const url = URL.createObjectURL(file);
+          if (avatarPreview) avatarPreview.src = url;
+        }
+      });
+    }
 
-    // เปิด popup
+    // submit profile update (username + avatar)
+    const form = document.getElementById('profileForm');
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const unameInput = document.querySelector('input#username');
+
+        const fd = new FormData();
+        if (unameInput && unameInput.value.trim()) fd.append('username', unameInput.value.trim());
+        if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+          fd.append('avatar', avatarInput.files[0]);
+        }
+
+        const res = await fetch('/profiles/me', {
+          method: 'POST',
+          body: fd,
+          credentials: 'include',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data?.error) {
+          alert(data.error || 'อัปเดตโปรไฟล์ไม่สำเร็จ');
+          return;
+        }
+        if (data.user?.userProfile && avatarPreview) {
+          avatarPreview.src = data.user.userProfile;
+        }
+        if (data.user?.username) {
+          const headerUname = document.querySelector('h2#username');
+          if (headerUname) headerUname.textContent = data.user.username;
+        }
+        alert('บันทึกโปรไฟล์สำเร็จ');
+      });
+    }
+
+    // Popup modal
     const modal = document.getElementById("modal-overlay");
     document.querySelector(".new-category-btn").addEventListener("click", () => {
       modal.style.display = "flex";
@@ -148,6 +208,7 @@
 
     // Initial load
     fetchCategories();
+    loadProfile();
   </script>
 </body>
 
