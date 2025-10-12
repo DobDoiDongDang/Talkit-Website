@@ -133,8 +133,7 @@
     }
 
     async function fetchPostDetail(postId) {
-      // แก้ให้เรียกตาม API ใหม่
-      const res = await fetch(`/posts/${postId}`);
+      const res = await fetch(`/posts/${postId}`, { credentials: 'include' });
       if (!res.ok) return null;
       return await res.json();
     }
@@ -149,23 +148,19 @@
         <div class="post-header">
           <div class="user-info">
             <img src="user.png" class="post-avatar" alt="User Avatar" />
-            <div>
-              <h3>${escapeHtml(post.username || 'Anon')}</h3>
-            </div>
+            <div><h3>${escapeHtml(post.username || 'Anon')}</h3></div>
           </div>
         </div>
         <h4 class="post-title">${escapeHtml(post.title)}</h4>
         <p>${escapeHtml(post.text)}</p>
       `;
 
-      // รูปภาพของโพสต์
       if (pictures && pictures.length) {
         html += `<div class="post-pictures">` +
           pictures.map(pic => `<img src="${escapeHtml(pic.url || pic.data)}" class="post-img" alt="post image" />`).join('') +
           `</div>`;
       }
 
-      // โค้ดของโพสต์
       if (codes && codes.length) {
         codes.forEach(code => {
           html += `
@@ -178,15 +173,19 @@
 
       html += `<hr />`;
 
-      // ฟอร์มคอมเมนต์
+      // ฟอร์มคอมเมนต์ (เพิ่มปุ่มเพิ่มโค้ด และ preview รูป)
       html += `
         <div class="comment-section">
           <h4>แสดงความคิดเห็น</h4>
           <textarea class="comment-input" placeholder="พิมพ์ความคิดเห็นของคุณ..."></textarea>
-          <div class="comment-actions">
-            <button class="img-btn">แนบรูปภาพ</button>
-            <button class="submit-comment">เพิ่มความคิดเห็น</button>
+          <div class="comment-actions" style="display:flex; gap:8px; margin-top:8px;">
+            <button class="img-btn" type="button">แนบรูปภาพ</button>
+            <button class="code-btn" type="button">เพิ่มโค้ด</button>
+            <button class="submit-comment" type="button">เพิ่มความคิดเห็น</button>
           </div>
+          <input type="file" id="commentImageInput" accept="image/*" multiple style="display:none">
+          <div id="comment-image-preview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"></div>
+          <div id="comment-code-list" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>
         </div>
         <hr />
         <div class="all-comments">
@@ -228,17 +227,133 @@
         html += `<p>ยังไม่มีความคิดเห็น</p>`;
       }
       html += `</div>`;
+
       document.getElementById('post-box').innerHTML = html;
+
+      // ติดตั้ง logic คอมเมนต์ (แนบหลายรูป + โค้ดหลายบล็อก)
+      setupCommentComposer(post.id);
     }
 
-    // โหลดข้อมูลจริง
-    (async () => {
-      fetchCategories();
-      const postId = getPostId();
-      if (!postId) {
-        document.getElementById('post-box').innerHTML = '<p>ไม่พบโพสต์นี้</p>';
-        return;
+    function setupCommentComposer(postId) {
+      const section = document.querySelector('.comment-section');
+      const imgBtn = section.querySelector('.img-btn');
+      const codeBtn = section.querySelector('.code-btn');
+      const submitBtn = section.querySelector('.submit-comment');
+      const imgInput = section.querySelector('#commentImageInput');
+      const preview = section.querySelector('#comment-image-preview');
+      const codeList = section.querySelector('#comment-code-list');
+
+      let files = [];      // File[]
+      let codes = [];      // string[]
+
+      imgBtn.onclick = () => imgInput.click();
+      imgInput.onchange = () => {
+        const selected = Array.from(imgInput.files || []);
+        files.push(...selected);
+        imgInput.value = '';
+        renderPreviews();
+      };
+
+      // เปลี่ยน UI "เพิ่มโค้ด" ให้หน้าตาเหมือน create_post
+      codeBtn.onclick = () => {
+        const wrap = document.createElement('div');
+        wrap.className = 'code-block';
+
+        wrap.innerHTML = `
+          <button class="close-btn" type="button">&times;</button>
+          <div class="code-header">Python</div>
+          <textarea class="code-content" placeholder="เขียนโค้ดของคุณที่นี่..."></textarea>
+          <div class="code-footer">
+            <span></span>
+            <button class="run-btn" type="button">Run</button>
+          </div>
+        `;
+
+        const ta = wrap.querySelector('.code-content');
+        const closeBtn = wrap.querySelector('.close-btn');
+        const runBtn = wrap.querySelector('.run-btn');
+
+        // จองที่ในอาร์เรย์ไว้ก่อน
+        codes.push('');
+        const syncIndex = () => Array.from(codeList.children).indexOf(wrap);
+
+        ta.addEventListener('input', () => {
+          const idx = syncIndex();
+          if (idx > -1) codes[idx] = ta.value;
+        });
+
+        closeBtn.addEventListener('click', () => {
+          const idx = syncIndex();
+          if (idx > -1) codes.splice(idx, 1);
+          wrap.remove();
+        });
+
+        // ปุ่ม Run เป็น UI เท่านั้น (ให้เหมือน create_post)
+        runBtn.addEventListener('click', () => {
+          // คุณสามารถใส่ logic รันโค้ดได้ภายหลัง
+          // ตอนนี้ทำให้ปุ่มมี feedback เล็กน้อย
+          runBtn.disabled = true;
+          runBtn.textContent = 'Running...';
+          setTimeout(() => { runBtn.disabled = false; runBtn.textContent = 'Run'; }, 600);
+        });
+
+        codeList.appendChild(wrap);
+        ta.focus();
+      };
+
+      function renderPreviews() {
+        preview.innerHTML = '';
+        files.forEach((f, idx) => {
+          const url = URL.createObjectURL(f);
+          const box = document.createElement('div');
+          box.style.position = 'relative';
+          const img = document.createElement('img');
+          img.src = url;
+          img.style.maxWidth = '120px';
+          img.style.maxHeight = '120px';
+          img.style.objectFit = 'cover';
+          img.style.border = '1px solid #ddd';
+          img.style.borderRadius = '8px';
+          const del = document.createElement('button');
+          del.textContent = '×';
+          del.style.position = 'absolute';
+          del.style.top = '2px';
+          del.style.right = '2px';
+          del.onclick = () => { files.splice(idx, 1); renderPreviews(); };
+          box.appendChild(img);
+          box.appendChild(del);
+          preview.appendChild(box);
+        });
       }
+
+      submitBtn.onclick = async () => {
+        const text = section.querySelector('.comment-input').value.trim();
+        const fd = new FormData();
+        fd.append('postId', String(postId));
+        fd.append('text', text);
+        codes.filter(Boolean).forEach(code => fd.append('codes[]', code));
+        files.forEach(f => fd.append('images[]', f));
+
+        const res = await fetch('/posts/comments', {
+          method: 'POST',
+          body: fd,
+          credentials: 'include'
+        });
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          alert(e.error || 'เพิ่มความคิดเห็นไม่สำเร็จ');
+          return;
+        }
+        // reload post detail
+        const data = await fetch(`/posts/${postId}`, { credentials: 'include' }).then(r => r.json()).catch(() => null);
+        if (data) renderPostDetail(data);
+      };
+    }
+
+    // ดึงข้อมูลโพสต์เมื่อโหลดหน้า
+    (async () => {
+      const postId = getPostId();
+      if (!postId) return alert('ไม่พบโพสต์ที่ต้องการดูรายละเอียด');
       const data = await fetchPostDetail(postId);
       renderPostDetail(data);
     })();

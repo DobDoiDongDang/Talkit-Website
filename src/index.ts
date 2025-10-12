@@ -6,6 +6,7 @@ import { authRoute } from "./routes/auth.js";
 import { postRoute } from "./routes/post.js";
 import { homeRoute } from "./routes/home.js";
 import { getCookie } from "hono/cookie";
+import { commentRoute } from "./routes/comment.js";
 
 import 'dotenv/config';
 
@@ -25,6 +26,7 @@ app.use("/*", serveStatic({ root: "./public" }));
 app.use("/*", authMiddleware);
 app.route("/", homeRoute);
 app.route("posts", postRoute);
+app.route("posts", commentRoute); // เพิ่มให้รองรับ /posts/comments และ /posts/:postId/comments
 app.get("/logout", (c) => {
   // ลบ cookie token โดยตั้ง Max-Age=0
   c.header("Set-Cookie", "token=; HttpOnly; Path=/; Max-Age=0; Secure");

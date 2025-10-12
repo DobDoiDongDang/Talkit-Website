@@ -251,20 +251,4 @@ postRoute.get("/:postid", async (c) => {
   });
 });
 
-// เพิ่มคอมเมนต์ใหม่
-postRoute.post("/comments", async (c) => {
-  const body = await c.req.json();
-  const user = (c as any).get("user");
-  if (!user) return c.json({ error: 'Unauthorized' }, 401);
-  const inserted = await db.insert(comments).values({
-    postId: body.postId,
-    userId: user.id,
-    categoryId: body.categoryId,
-    text: body.text,
-    picture: body.picture ?? null,
-    code: body.code ?? null,
-  } as any).returning();
-  return c.json(inserted[0]);
-});
-
 export { postRoute };

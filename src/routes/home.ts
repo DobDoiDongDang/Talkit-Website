@@ -3,8 +3,7 @@ import { Hono } from "hono";
 import { readFile } from "fs/promises";
 import * as path from "path";
 import { db } from '../db/index.js';
-import { categories, posts, comments, post_code, post_picture } from '../db/schema.js';
-import { eq, desc } from "drizzle-orm";
+import { categories } from '../db/schema.js';
 
 // ✅ [แก้] import serveStatic จาก path ใหม่
 import { serveStatic } from "@hono/node-server/serve-static";

@@ -455,3 +455,114 @@ body {
 .comment-actions button:hover {
   filter: brightness(0.9);
 }
+
+/* ======================
+   Comment composer UI (match create_post)
+   ====================== */
+
+/* กล่องโค้ดในคอมเมนต์ ให้หน้าตาเหมือน create_post */
+.comment-section .code-block {
+  /* กรอบ + เงา + พื้นหลัง */
+  margin: 10px 0;
+  border: 1px solid #007bff;
+  border-radius: 8px;
+  background: #f8faff;
+  box-shadow: 0 2px 10px rgba(0, 91, 255, 0.1);
+  position: relative; /* สำหรับปุ่มปิดมุมขวา */
+}
+
+/* แถบหัวของโค้ดบล็อก */
+.comment-section .code-header {
+  background: #0050d4;
+  color: #fff;
+  padding: 8px 12px;
+  font-weight: 600;
+}
+
+/* พื้นที่พิมพ์โค้ด */
+.comment-section .code-content {
+  width: 100%;
+  min-height: 100px;
+  border: none;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  background: #fff;
+  color: #002;
+}
+
+/* ส่วนท้ายของโค้ดบล็อก (มีปุ่ม Run) */
+.comment-section .code-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #e3f2fd;
+  padding: 8px 12px;
+}
+
+/* ปุ่ม Run ของคอมเมนต์ */
+.comment-section .run-btn {
+  background: linear-gradient(90deg, #032496, #0050d4);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.comment-section .run-btn:hover { background: #0030b8; }
+
+/* ปุ่มปิด (กากบาท) ในโค้ดบล็อก/รูปของคอมเมนต์ */
+.comment-section .close-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #ff4d4d;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
+}
+.comment-section .close-btn:hover { background: #e60000; }
+
+/* พรีวิวรูปที่เลือกในคอมเมนต์ (ก่อนส่ง) */
+#comment-image-preview img {
+  max-width: 120px;
+  max-height: 120px;
+  object-fit: cover;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+/* รูปที่แสดงในคอมเมนต์ที่โพสต์แล้ว */
+.comment-pictures {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.comment-pictures .comment-img {
+  max-width: 140px;
+  max-height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e0e0ff;
+}
+
+/* ป้องกันรูปโปรไฟล์ยืด/บิด */
+.post-avatar, .comment-avatar {
+  object-fit: cover;
+}
+
+/* Responsive: ย่อรูปพรีวิวในจอเล็ก */
+@media (max-width: 768px) {
+  #comment-image-preview img { max-width: 90px; max-height: 90px; }
+  .comment-pictures .comment-img { max-width: 110px; max-height: 110px; }
+}
