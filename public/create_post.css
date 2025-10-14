@@ -55,14 +55,6 @@ body {
   width: 100%;
 }
 
-.search-box {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: none;
-  outline: none;
-  margin-bottom: 1rem;
-}
 
 .category-list {
   list-style: none;
@@ -71,13 +63,11 @@ body {
 
 .category-list li {
   background: rgba(255, 255, 255, 0.1);
-  margin: 6px 0;
-  padding: 10px;
+  width: 200px;
+  padding: 8px 10px;
   border-radius: 8px;
+  margin-bottom: 1rem;
   transition: background 0.2s, transform 0.2s;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   cursor: pointer;
 }
 
@@ -166,10 +156,16 @@ body {
 .modal input {
   width: 100%;
   padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #b3e5fc;
+  border-radius: 10px;
+  border: 2px solid #b3e5fc;
   font-size: 1rem;
-  margin-bottom: 0.7rem;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.modal input:focus {
+  border-color: #0050d4;
+  box-shadow: 0 0 8px rgba(0, 91, 255, 0.3);
 }
 
 .modal-actions {

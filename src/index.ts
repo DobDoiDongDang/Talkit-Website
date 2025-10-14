@@ -5,6 +5,7 @@ import { authMiddleware } from "./middlewares/authMiddleware.js";
 import { authRoute } from "./routes/auth.js";
 import { postRoute } from "./routes/post.js";
 import { homeRoute } from "./routes/home.js";
+import { sandRoute } from "./routes/sand.js";
 import { getCookie } from "hono/cookie";
 import { commentRoute } from "./routes/comment.js";
 import { profilesRoute } from "./routes/profiles.js";
@@ -26,6 +27,7 @@ app.route("auth", authRoute);
 app.use("/*", serveStatic({ root: "./public" }));
 app.use("/*", authMiddleware);
 app.route("/", homeRoute);
+app.route("sand", sandRoute);
 app.route("posts", postRoute);
 app.route("posts", commentRoute); // เพิ่มให้รองรับ /posts/comments และ /posts/:postId/comments
 app.route("profiles", profilesRoute);

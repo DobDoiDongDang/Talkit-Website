@@ -11,17 +11,17 @@ body {
   background: linear-gradient(135deg, #e0f2ff 0%, #b3e5fc 50%, #81d4fa 100%);
   color: #003366;
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
+  overflow-y: auto; /* ✅ ให้หน้า scroll ได้ */
 }
 
-/* Container */
 .container {
   display: flex;
   width: 100%;
   overflow: hidden;
 }
 
-/* Sidebar */
+/* Sidebar เหมือนเดิมทุกจุด */
 .sidebar {
   width: 270px;
   background: linear-gradient(180deg, #0050d4, #007bff);
@@ -36,18 +36,13 @@ body {
 .profile {
   text-align: center;
   margin-bottom: 2rem;
+  cursor: pointer;
 }
 
 .avatar {
   width: 80px;
   border-radius: 50%;
   border: 3px solid #fff;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.avatar:hover {
-  transform: scale(1.05);
 }
 
 .profile h2 {
@@ -77,37 +72,12 @@ body {
   cursor: pointer;
 }
 
-
 .category-list li:hover {
   background: rgba(255, 255, 255, 0.25);
   transform: translateX(3px);
 }
 
-.category-list li.active {
-  background: rgba(255, 255, 255, 0.3);
-  font-weight: bold;
-}
-
-/* ปุ่มสร้างหมวดหมู่ใหม่ */
-.new-category-btn {
-  width: 100%;
-  background: #fff;
-  color: #0050d4;
-  border: none;
-  padding: 10px 0;
-  border-radius: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-}
-
-.new-category-btn:hover {
-  background: #f1f4ff;
-  transform: scale(1.04);
-}
-
-/* ปุ่ม SandBox */
+/* Buttons */
 .sandbox-btn {
   margin-top: auto;
   background: #ffffff;
@@ -126,97 +96,127 @@ body {
   transform: scale(1.05);
 }
 
-/* Main content */
-.main-content {
+/* ปุ่มสร้างหมวดหมู่ใหม่ */
+.new-category-btn {
+  width: 100%;
+  background: #fff;
+  color: #0050d4;
+  border: none;
+  padding: 10px 0;
+  border-radius: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-bottom: 1rem;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.new-category-btn:hover {
+  background: #f1f4ff;
+  transform: scale(1.04);
+}
+
+
+/* Main content เต็มจอฝั่งขวา */
+.main-content.sandbox-full {
   flex: 1;
-  padding: 2rem 3rem;
-  overflow-y: auto;
-}
-
-.main-content h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #003366;
-  margin-bottom: 1.5rem;
-}
-
-/* Posts */
-.posts {
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  margin-top: 1rem;
-  gap: 1rem;
+  justify-content: flex-start;
+  align-items: stretch;
+  height: auto; /* ✅ ยกเลิก fix ความสูง */
+  overflow-y: visible; /* ✅ ให้ยืดได้ตามเนื้อหา */
 }
 
-.post-card {
+/* กล่อง SandBox เต็มพื้นที่ */
+.sandbox-box {
   background: #ffffff;
   border-radius: 15px;
-  padding: 1rem 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.25s ease;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 91, 255, 0.15);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.post-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+.sandbox-header {
+  margin-bottom: 15px;
 }
 
-.post-header {
+.sandbox-header h2 {
+  font-size: 1.6rem;
+  color: #003366;
+}
+
+.code-container {
+  border: 1px solid #007bff;
+  border-radius: 10px;
+  background: #f8faff;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+.code-header {
+  background: #0050d4;
+  color: #fff;
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.code-input {
+  flex: 1;
+  width: 100%;
+  border: none;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  background: #fff;
+  height: auto; /* ✅ ให้ยาวอัตโนมัติ */
+}
+
+/* ✅ เพิ่มส่วนนี้เพื่อให้ textarea ขยายอัตโนมัติ */
+.code-input:focus {
+  height: auto;
+}
+
+.result-section {
+  background: #e3f2fd;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+  padding: 10px 12px;
 }
 
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.post-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid #007bff;
-}
-
-.username {
-  color: #0050d4;
-  font-weight: 500;
-}
-
-.category {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.post-content {
-  font-size: 1rem;
-  color: #333;
-}
-
-/* ปุ่มสร้างกระดานใหม่ */
-.new-board-btn {
-  margin-top: 1.5rem;
-  background: linear-gradient(90deg, #0050d4, #007bff);
+.run-btn {
+  background: linear-gradient(90deg, #032496, #0050d4);
   color: white;
   border: none;
-  padding: 12px 25px;
-  border-radius: 20px;
+  border-radius: 8px;
+  padding: 6px 14px;
   cursor: pointer;
-  font-weight: 600;
-  box-shadow: 0 4px 10px rgba(0, 91, 255, 0.3);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-.new-board-btn:hover {
-  transform: translateY(-2px);
-  background: linear-gradient(90deg, #0040b8, #006aff);
+.run-btn:hover {
+  background: #002080;
 }
 
-/* Popup Modal Styles */
+.result-box {
+  background: white;
+  border-top: 1px solid #c3ddff;
+  padding: 10px;
+  font-family: monospace;
+  color: #003366;
+  min-height: 100px;
+  white-space: pre-wrap;
+}
+
+/* Modal */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -291,28 +291,18 @@ body {
   filter: brightness(0.95);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
 
 /* Responsive */
 @media (max-width: 768px) {
-  body {
-    flex-direction: column;
-  }
-
   .sidebar {
     width: 100%;
     flex-direction: row;
     justify-content: space-between;
-  }
-
-  .main-content {
     padding: 1rem;
   }
 
-  .post-card {
+  .main-content.sandbox-full {
     padding: 1rem;
   }
 }
+

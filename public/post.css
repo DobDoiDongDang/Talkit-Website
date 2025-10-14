@@ -50,23 +50,14 @@ body {
   width: 100%;
 }
 
-.search-box {
-  width: 100%;
+.category-list li {
+  background: rgba(255, 255, 255, 0.1);
+  width: 200px;
   padding: 8px 10px;
   border-radius: 8px;
-  border: none;
-  outline: none;
   margin-bottom: 1rem;
-}
-
-.category-list li {
-  list-style: none;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 6px 0;
-  padding: 10px;
-  border-radius: 8px;
+  transition: background 0.2s, transform 0.2s;
   cursor: pointer;
-  transition: 0.2s;
 }
 
 .category-list li:hover {
@@ -622,6 +613,54 @@ body {
   object-fit: cover;
 }
 
+/* ======================
+   Image Preview Popup (จำกัดขนาด)
+   ====================== */
+.image-preview-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  cursor: zoom-out;
+  padding: 20px;
+}
+
+.image-preview-content {
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 25px rgba(255,255,255,0.3);
+}
+
+.image-preview-content img {
+  max-width: 80vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 10px;
+  cursor: default;
+  transition: transform 0.25s ease;
+}
+
+.image-preview-content img:hover {
+  transform: scale(1.03);
+}
+
+/* รองรับมือถือ */
+@media (max-width: 768px) {
+  .image-preview-content img {
+    max-width: 95vw;
+    max-height: 75vh;
+  }
+}
 /* Responsive: ย่อรูปพรีวิวในจอเล็ก */
 @media (max-width: 768px) {
   #comment-image-preview img { max-width: 90px; max-height: 90px; }

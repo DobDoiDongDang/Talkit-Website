@@ -18,7 +18,6 @@
       </div>
       <div class="menu">
         <p class="menu-title">หมวดหมู่</p>
-        <input type="text" placeholder="ค้นหา" class="search-box">
         <ul class="category-list" id="category-list"></ul>
       </div>
       <button class="new-category-btn">สร้างหมวดหมู่ใหม่</button>
@@ -45,7 +44,17 @@
     </div>
   </div>
 
+  <div id="imagePreviewOverlay" class="image-preview-overlay" style="display:none;">
+    <div class="image-preview-content">
+      <img id="previewedImage" src="" alt="preview">
+    </div>
+  </div>
+
   <script>
+    document.querySelector('.sandbox-btn').addEventListener('click', () => {
+      window.location.href = '/sand';
+    });
+
     fetchCategories();
     // helper to read cookie (non httpOnly)
     function readCookie(name) {
@@ -56,12 +65,12 @@
     async function hydrateSidebarProfile() {
       let user = null;
       const raw = readCookie('user');
-      if (raw) { try { user = JSON.parse(raw); } catch {} }
+      if (raw) { try { user = JSON.parse(raw); } catch { } }
       if (!user || !user.userProfile || !user.username) {
         try {
           const res = await fetch('/profiles/me', { credentials: 'include' });
           if (res.ok) user = await res.json();
-        } catch {}
+        } catch { }
       }
       const avatarEl = document.querySelector('.sidebar .avatar');
       const nameEl = document.querySelector('.sidebar #username');
@@ -186,6 +195,7 @@
           <div class="code-block">
             <div class="code-header">${escapeHtml(code.language || 'Code')}</div>
             <pre class="code-content">${escapeHtml(code.code)}</pre>
+            <pre class="code-footer"><span>Result:</span><button class="run-btn">Run</button></pre>
           </div>`;
         });
       }
@@ -232,6 +242,7 @@
               <div class="code-block small-code">
                 <div class="code-header">${escapeHtml(code.language || 'Code')}</div>
                 <pre class="code-content">${escapeHtml(code.code)}</pre>
+                <pre class="code-footer"><span>Result:</span><button class="run-btn">Run</button></pre>
               </div>`;
             });
           }
@@ -373,7 +384,31 @@
       if (!postId) return alert('ไม่พบโพสต์ที่ต้องการดูรายละเอียด');
       const data = await fetchPostDetail(postId);
       renderPostDetail(data);
+      setupImagePreview();
     })();
+
+    function setupImagePreview() {
+      const overlay = document.getElementById('imagePreviewOverlay');
+      const previewImg = document.getElementById('previewedImage');
+
+      // เลือกรูปทั้งหมดในโพสต์และคอมเมนต์
+      const allImgs = document.querySelectorAll('.post-img, .comment-img');
+      allImgs.forEach(img => {
+        img.addEventListener('click', () => {
+          previewImg.src = img.src;
+          overlay.style.display = 'flex';
+        });
+      });
+
+      // ปิดเมื่อคลิกพื้นหลัง
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.style.display = 'none';
+          previewImg.src = '';
+        }
+      });
+    }
+
   </script>
 </body>
 

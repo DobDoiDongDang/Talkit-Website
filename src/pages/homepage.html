@@ -19,7 +19,6 @@
 
       <div class="menu">
         <p class="menu-title">หมวดหมู่</p>
-        <input type="text" placeholder="ค้นหา" class="search-box">
         <ul class="category-list" id="category-list"></ul>
       </div>
 
@@ -48,6 +47,11 @@
   </div>
 
   <script>
+
+    document.querySelector('.sandbox-btn').addEventListener('click', () => {
+      window.location.href = '/sand';
+    });
+
     // helper to read cookie (non httpOnly)
     function readCookie(name) {
       const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
@@ -57,14 +61,14 @@
     async function hydrateSidebarProfile() {
       let user = null;
       const raw = readCookie('user');
-      if (raw) { try { user = JSON.parse(raw); } catch {} }
+      if (raw) { try { user = JSON.parse(raw); } catch { } }
 
       // ถ้า cookie ยังไม่มี/ไม่ครบ ลองเรียกโปรไฟล์จาก API
       if (!user || !user.userProfile || !user.username) {
         try {
           const res = await fetch('/profiles/me', { credentials: 'include' });
           if (res.ok) user = await res.json();
-        } catch {}
+        } catch { }
       }
 
       const avatarEl = document.querySelector('.sidebar .avatar');

@@ -19,7 +19,6 @@
 
             <div class="menu">
                 <p class="menu-title">หมวดหมู่</p>
-                <input type="text" placeholder="ค้นหา" class="search-box">
                 <ul class="category-list" id="category-list"></ul>
             </div>
 
@@ -75,261 +74,266 @@
     </div>
 
     <script>
-  // helper to read cookie (non httpOnly)
-  function readCookie(name) {
-    const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-    return v ? decodeURIComponent(v.pop()) : null;
-  }
 
-  async function hydrateSidebarProfile() {
-    let user = null;
-    const raw = readCookie('user');
-    if (raw) { try { user = JSON.parse(raw); } catch {} }
-    if (!user || !user.userProfile || !user.username) {
-      try {
-        const res = await fetch('/profiles/me', { credentials: 'include' });
-        if (res.ok) user = await res.json();
-      } catch {}
-    }
-    const sidebarAvatar = document.querySelector('.sidebar .avatar');
-    const sidebarName = document.querySelector('.sidebar #username');
-    const headerAvatar = document.querySelector('.post-header .post-avatar');
-    const headerName = document.getElementById('post-username');
+        document.querySelector('.sandbox-btn').addEventListener('click', () => {
+            window.location.href = '/sand';
+        });
 
-    const avatarSrc = (user && user.userProfile) ? user.userProfile : 'user.png';
-    if (sidebarAvatar) sidebarAvatar.src = avatarSrc;
-    if (headerAvatar) headerAvatar.src = avatarSrc;
-    if (sidebarName && user?.username) sidebarName.textContent = user.username;
-    if (headerName && user?.username) headerName.textContent = user.username;
-  }
+        // helper to read cookie (non httpOnly)
+        function readCookie(name) {
+            const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+            return v ? decodeURIComponent(v.pop()) : null;
+        }
 
-  hydrateSidebarProfile();
+        async function hydrateSidebarProfile() {
+            let user = null;
+            const raw = readCookie('user');
+            if (raw) { try { user = JSON.parse(raw); } catch { } }
+            if (!user || !user.userProfile || !user.username) {
+                try {
+                    const res = await fetch('/profiles/me', { credentials: 'include' });
+                    if (res.ok) user = await res.json();
+                } catch { }
+            }
+            const sidebarAvatar = document.querySelector('.sidebar .avatar');
+            const sidebarName = document.querySelector('.sidebar #username');
+            const headerAvatar = document.querySelector('.post-header .post-avatar');
+            const headerName = document.getElementById('post-username');
 
-  // get user from cookie and set username in UI
-  let currentUser = null;
-  const userCookie = readCookie('user');
-  if (userCookie) { try { currentUser = JSON.parse(userCookie); } catch { currentUser = null; } }
-  if (currentUser && currentUser.username) {
-      const unameEl = document.getElementById('username');
-      const uname = document.getElementById('post-username');
-      if (unameEl) unameEl.textContent = currentUser.username;
-      if (uname) uname.textContent = currentUser.username;
-  }
-  // set sidebar avatar + header avatar
-  const sidebarAvatar = document.querySelector('.sidebar .avatar');
-  if (sidebarAvatar) sidebarAvatar.src = (currentUser && currentUser.userProfile) ? currentUser.userProfile : 'user.png';
-  const headerAvatar = document.querySelector('.post-header .post-avatar');
-  if (headerAvatar) headerAvatar.src = (currentUser && currentUser.userProfile) ? currentUser.userProfile : 'user.png';
+            const avatarSrc = (user && user.userProfile) ? user.userProfile : 'user.png';
+            if (sidebarAvatar) sidebarAvatar.src = avatarSrc;
+            if (headerAvatar) headerAvatar.src = avatarSrc;
+            if (sidebarName && user?.username) sidebarName.textContent = user.username;
+            if (headerName && user?.username) headerName.textContent = user.username;
+        }
 
-  const postContent = document.getElementById('postContent');
-  const codeBtn = document.querySelector('.code-btn');
-  const imgBtn = document.querySelector('.img-btn');
-  const imageInput = document.getElementById('imageInput');
+        hydrateSidebarProfile();
 
-  // เก็บข้อมูลรูปและโค้ดในตัวแปร
-  let uploadedImages = [];
-  let codeBlocks = [];
+        // get user from cookie and set username in UI
+        let currentUser = null;
+        const userCookie = readCookie('user');
+        if (userCookie) { try { currentUser = JSON.parse(userCookie); } catch { currentUser = null; } }
+        if (currentUser && currentUser.username) {
+            const unameEl = document.getElementById('username');
+            const uname = document.getElementById('post-username');
+            if (unameEl) unameEl.textContent = currentUser.username;
+            if (uname) uname.textContent = currentUser.username;
+        }
+        // set sidebar avatar + header avatar
+        const sidebarAvatar = document.querySelector('.sidebar .avatar');
+        if (sidebarAvatar) sidebarAvatar.src = (currentUser && currentUser.userProfile) ? currentUser.userProfile : 'user.png';
+        const headerAvatar = document.querySelector('.post-header .post-avatar');
+        if (headerAvatar) headerAvatar.src = (currentUser && currentUser.userProfile) ? currentUser.userProfile : 'user.png';
 
-  /* เพิ่ม code block แยก container */
-  codeBtn.addEventListener('click', () => {
-      const codeData = {
-          id: Date.now(),
-          code: ''
-      };
-      codeBlocks.push(codeData);
+        const postContent = document.getElementById('postContent');
+        const codeBtn = document.querySelector('.code-btn');
+        const imgBtn = document.querySelector('.img-btn');
+        const imageInput = document.getElementById('imageInput');
 
-      const postItem = document.createElement('div');
-      postItem.classList.add('post-item');
-      postItem.dataset.codeId = codeData.id;
+        // เก็บข้อมูลรูปและโค้ดในตัวแปร
+        let uploadedImages = [];
+        let codeBlocks = [];
 
-      const codeBlock = document.createElement('div');
-      codeBlock.classList.add('code-block');
-      codeBlock.innerHTML = `
+        /* เพิ่ม code block แยก container */
+        codeBtn.addEventListener('click', () => {
+            const codeData = {
+                id: Date.now(),
+                code: ''
+            };
+            codeBlocks.push(codeData);
+
+            const postItem = document.createElement('div');
+            postItem.classList.add('post-item');
+            postItem.dataset.codeId = codeData.id;
+
+            const codeBlock = document.createElement('div');
+            codeBlock.classList.add('code-block');
+            codeBlock.innerHTML = `
           <button class="close-btn">&times;</button>
           <div class="code-header">Python</div>
           <textarea class="code-content" placeholder="เขียนโค้ดของคุณที่นี่..."></textarea>
       `;
 
-      codeBlock.querySelector('.close-btn').addEventListener('click', () => {
-          codeBlocks = codeBlocks.filter(code => code.id !== codeData.id);
-          postItem.remove();
-      });
+            codeBlock.querySelector('.close-btn').addEventListener('click', () => {
+                codeBlocks = codeBlocks.filter(code => code.id !== codeData.id);
+                postItem.remove();
+            });
 
-      codeBlock.querySelector('.code-content').addEventListener('input', (e) => {
-          const index = codeBlocks.findIndex(code => code.id === codeData.id);
-          if (index !== -1) {
-              codeBlocks[index].code = e.target.value;
-          }
-      });
+            codeBlock.querySelector('.code-content').addEventListener('input', (e) => {
+                const index = codeBlocks.findIndex(code => code.id === codeData.id);
+                if (index !== -1) {
+                    codeBlocks[index].code = e.target.value;
+                }
+            });
 
-      postItem.appendChild(codeBlock);
+            postItem.appendChild(codeBlock);
 
-      postContent.appendChild(postItem);
-      postItem.scrollIntoView({ behavior: 'smooth' });
-  });
+            postContent.appendChild(postItem);
+            postItem.scrollIntoView({ behavior: 'smooth' });
+        });
 
-  /* แนบรูปภาพแยก container */
-  imgBtn.addEventListener('click', () => imageInput.click());
+        /* แนบรูปภาพแยก container */
+        imgBtn.addEventListener('click', () => imageInput.click());
 
-  imageInput.addEventListener('change', (e) => {
-      const files = Array.from(e.target.files);
-      if (files.length === 0) return;
+        imageInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
 
-      files.forEach(file => {
-          const reader = new FileReader();
-          reader.onload = function (event) {
-              const imageData = {
-                  id: Date.now(), // temp id for frontend
-                  data: event.target.result
-              };
-              uploadedImages.push(imageData);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const imageData = {
+                        id: Date.now(), // temp id for frontend
+                        data: event.target.result
+                    };
+                    uploadedImages.push(imageData);
 
-              const postItem = document.createElement('div');
-              postItem.classList.add('post-item');
-              postItem.dataset.imageId = imageData.id;
+                    const postItem = document.createElement('div');
+                    postItem.classList.add('post-item');
+                    postItem.dataset.imageId = imageData.id;
 
-              const wrapper = document.createElement('div');
-              wrapper.classList.add('image-wrapper');
-              wrapper.innerHTML = `
+                    const wrapper = document.createElement('div');
+                    wrapper.classList.add('image-wrapper');
+                    wrapper.innerHTML = `
                   <button class="close-btn">&times;</button>
                   <img src="${imageData.data}" alt="Preview Image">
               `;
 
-              wrapper.querySelector('.close-btn').addEventListener('click', () => {
-                  uploadedImages = uploadedImages.filter(img => img.id !== imageData.id);
-                  postItem.remove();
-              });
+                    wrapper.querySelector('.close-btn').addEventListener('click', () => {
+                        uploadedImages = uploadedImages.filter(img => img.id !== imageData.id);
+                        postItem.remove();
+                    });
 
-              // กำหนดขนาดรูป
-              const img = wrapper.querySelector('img');
-              img.style.maxWidth = "100%";
-              img.style.maxHeight = "250px";
-              img.style.borderRadius = "8px";
-              wrapper.style.border = "1px solid #007bff";
-              wrapper.style.padding = "8px";
-              wrapper.style.marginBottom = "10px";
-              wrapper.style.position = "relative";
+                    // กำหนดขนาดรูป
+                    const img = wrapper.querySelector('img');
+                    img.style.maxWidth = "100%";
+                    img.style.maxHeight = "250px";
+                    img.style.borderRadius = "8px";
+                    wrapper.style.border = "1px solid #007bff";
+                    wrapper.style.padding = "8px";
+                    wrapper.style.marginBottom = "10px";
+                    wrapper.style.position = "relative";
 
-              postItem.appendChild(wrapper);
+                    postItem.appendChild(wrapper);
 
-              postContent.appendChild(postItem);
-              postItem.scrollIntoView({ behavior: 'smooth' });
-          };
-          reader.readAsDataURL(file);
-      });
+                    postContent.appendChild(postItem);
+                    postItem.scrollIntoView({ behavior: 'smooth' });
+                };
+                reader.readAsDataURL(file);
+            });
 
-  });
+        });
 
-  // Sidebar profile click
-  document.querySelector('.sidebar .avatar').addEventListener('click', () => {
-      window.location.href = '/profile';
-  });
+        // Sidebar profile click
+        document.querySelector('.sidebar .avatar').addEventListener('click', () => {
+            window.location.href = '/profile';
+        });
 
-  // เปิด popup
-  const modal = document.getElementById("modal-overlay");
-  document.querySelector(".new-category-btn").addEventListener("click", () => {
-      modal.style.display = "flex";
-      document.getElementById("category-name").focus();
-  });
+        // เปิด popup
+        const modal = document.getElementById("modal-overlay");
+        document.querySelector(".new-category-btn").addEventListener("click", () => {
+            modal.style.display = "flex";
+            document.getElementById("category-name").focus();
+        });
 
-  // ปุ่มยกเลิก
-  document.getElementById("cancel-btn").addEventListener("click", () => {
-      modal.style.display = "none";
-      document.getElementById("category-name").value = "";
-  });
+        // ปุ่มยกเลิก
+        document.getElementById("cancel-btn").addEventListener("click", () => {
+            modal.style.display = "none";
+            document.getElementById("category-name").value = "";
+        });
 
-  // ปุ่มบันทึก
-  document.getElementById("save-btn").addEventListener("click", async () => {
-      const name = document.getElementById("category-name").value.trim();
-      if (!name) return;
-      // เพิ่มหมวดหมู่ใหม่ลง backend
-      const res = await fetch('/categories', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-      });
-      if (res.ok) {
-          await fetchCategories();
-      }
-      document.getElementById("category-name").value = "";
-      modal.style.display = "none";
-  });
+        // ปุ่มบันทึก
+        document.getElementById("save-btn").addEventListener("click", async () => {
+            const name = document.getElementById("category-name").value.trim();
+            if (!name) return;
+            // เพิ่มหมวดหมู่ใหม่ลง backend
+            const res = await fetch('/categories', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            if (res.ok) {
+                await fetchCategories();
+            }
+            document.getElementById("category-name").value = "";
+            modal.style.display = "none";
+        });
 
-  let categories = [];
-  async function fetchCategories() {
-      const res = await fetch('/categories', { credentials: 'include' });
-      categories = await res.json();
-      renderCategories();
-  }
+        let categories = [];
+        async function fetchCategories() {
+            const res = await fetch('/categories', { credentials: 'include' });
+            categories = await res.json();
+            renderCategories();
+        }
 
-  function renderCategories() {
-      const list = document.getElementById('category-list');
-      list.innerHTML = '';
-      categories.forEach(cat => {
-          const li = document.createElement('li');
-          li.textContent = cat.name;
-          li.addEventListener('click', () => {
-              window.location.href = `/?categoryId=${encodeURIComponent(cat.id)}`;
-          });
-          list.appendChild(li);
-      });
-  }
+        function renderCategories() {
+            const list = document.getElementById('category-list');
+            list.innerHTML = '';
+            categories.forEach(cat => {
+                const li = document.createElement('li');
+                li.textContent = cat.name;
+                li.addEventListener('click', () => {
+                    window.location.href = `/?categoryId=${encodeURIComponent(cat.id)}`;
+                });
+                list.appendChild(li);
+            });
+        }
 
-  // Initial load
-  fetchCategories();
+        // Initial load
+        fetchCategories();
 
-  async function loadCategories() {
-      const res = await fetch('/categories', { credentials: 'include' });
-      const categories = await res.json();
+        async function loadCategories() {
+            const res = await fetch('/categories', { credentials: 'include' });
+            const categories = await res.json();
 
-      const dropdown = document.querySelector('.category-dropdown');
-      dropdown.innerHTML = categories.map(cat =>
-          `<option value="${cat.id}">${cat.name}</option>`
-      ).join('');
-  }
+            const dropdown = document.querySelector('.category-dropdown');
+            dropdown.innerHTML = categories.map(cat =>
+                `<option value="${cat.id}">${cat.name}</option>`
+            ).join('');
+        }
 
-  // Call on page load
-  loadCategories();
+        // Call on page load
+        loadCategories();
 
-  document.querySelector('.post-btn').addEventListener('click', async (e) => {
-      e.preventDefault();
+        document.querySelector('.post-btn').addEventListener('click', async (e) => {
+            e.preventDefault();
 
-      const title = document.querySelector('.post-title').value.trim();
-      const text = document.querySelector('.post-text').value.trim();
-      const categoryId = document.querySelector('.category-dropdown').value;
-      const codes = codeBlocks.map(code => code.code).filter(code => code.trim());
+            const title = document.querySelector('.post-title').value.trim();
+            const text = document.querySelector('.post-text').value.trim();
+            const categoryId = document.querySelector('.category-dropdown').value;
+            const codes = codeBlocks.map(code => code.code).filter(code => code.trim());
 
-      if (!title || !categoryId) {
-          alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-          return;
-      }
+            if (!title || !categoryId) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
 
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("text", text);
-      formData.append("categoryId", categoryId);
-      codes.forEach(code => formData.append("codes", code));
+            const formData = new FormData();
+            formData.append("title", title);
+            formData.append("text", text);
+            formData.append("categoryId", categoryId);
+            codes.forEach(code => formData.append("codes", code));
 
-      // ส่งไฟล์ทุกไฟล์ด้วย key เดิม images[]
-      for (const file of imageInput.files) {
-        formData.append("images", file);
-      }
+            // ส่งไฟล์ทุกไฟล์ด้วย key เดิม images[]
+            for (const file of imageInput.files) {
+                formData.append("images", file);
+            }
 
-      const res = await fetch('/posts', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include'
-      });
+            const res = await fetch('/posts', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
 
-      if (!res.ok) {
-          const error = await res.json();
-          alert(error.message || 'Failed to create post');
-          return;
-      }
+            if (!res.ok) {
+                const error = await res.json();
+                alert(error.message || 'Failed to create post');
+                return;
+            }
 
-      window.location.href = '/';
-  });
+            window.location.href = '/';
+        });
     </script>
 </body>
 
