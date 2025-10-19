@@ -207,7 +207,7 @@
           <div class="code-block">
             <div class="code-header">${escapeHtml(code.language || 'Code')}</div>
             <pre class="code-content">${escapeHtml(code.code)}</pre>
-            <pre class="code-footer"><span>Result:</span><button class="run-btn">Run</button></pre>
+            <pre class="code-footer"><span>Result:</span><button class="run-btn" id="run-btn">Run</button></pre>
           </div>`;
         });
       }
@@ -280,8 +280,11 @@
         addOptionsButton(header, true);
       });
 
-      // ติดตั้ง logic คอมเมนต์
-      setupCommentComposer(post.id);
+        // ติดตั้ง logic คอมเมนต์
+        setupCommentComposer(post.id);
+
+        // ติดตั้งตัวจัดการปุ่ม Run สำหรับโค้ดที่แสดง (ไม่รวม composer)
+        attachRunHandlers();
     }
 
     function setupCommentComposer(postId) {
@@ -408,6 +411,64 @@
       renderPostDetail(data);
       setupImagePreview();
     })();
+
+    // attach run handlers to displayed code blocks (post/comment bodies)
+    function attachRunHandlers() {
+      const blocks = document.querySelectorAll('#post-box .code-block');
+      blocks.forEach(block => {
+        // skip composer blocks inside comment composer
+        if (block.closest('.comment-section')) return;
+        const runBtn = block.querySelector('.run-btn');
+        if (!runBtn) return;
+        if (runBtn.dataset.attached) return; // prevent double attach
+        runBtn.dataset.attached = '1';
+
+        runBtn.addEventListener('click', async () => {
+          // find code content (pre.code-content)
+          const contentEl = block.querySelector('.code-content');
+          const code = contentEl ? contentEl.textContent : '';
+          const footer = block.querySelector('.code-footer');
+          if (!footer) return;
+
+          const origText = runBtn.textContent;
+          runBtn.disabled = true;
+          runBtn.textContent = 'Running...';
+
+          // ensure a result element exists
+          let resEl = footer.querySelector('.code-result');
+          if (!resEl) {
+            resEl = document.createElement('div');
+            resEl.className = 'code-result';
+            resEl.style.whiteSpace = 'pre-wrap';
+            resEl.style.marginTop = '8px';
+            footer.appendChild(resEl);
+          }
+
+          resEl.textContent = 'กำลังประมวลผล...';
+
+          try {
+            const res = await fetch('/sand/run', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code })
+            });
+
+            if (!res.ok) {
+              const txt = await res.text().catch(() => res.statusText);
+              resEl.textContent = `ข้อผิดพลาด: ${txt}`;
+            } else {
+              const data = await res.json().catch(() => ({}));
+              resEl.textContent = data.output || 'ไม่มีผลลัพธ์';
+            }
+          } catch (err) {
+            resEl.textContent = `เกิดข้อผิดพลาด: ${err.message}`;
+          }
+
+          runBtn.disabled = false;
+          runBtn.textContent = origText;
+        });
+      });
+    }
 
     function setupImagePreview() {
       const overlay = document.getElementById('imagePreviewOverlay');
