@@ -26,6 +26,7 @@ sandRoute.get("/", async (c) => {
   return c.html(await loadPage("sandbox.html"));
 });
 
+// code execution endpoint
 sandRoute.post("/run", async (c) => {
   const form = await c.req.formData();
   const code = form.get("code") as string;
