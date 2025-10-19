@@ -50,6 +50,18 @@
     </div>
   </div>
 
+  <div class="report-overlay" id="report-overlay" style="display:none;">
+    <div class="report-modal">
+      <h3>Report Request</h3>
+      <label for="report-reason">Reason</label>
+      <textarea id="report-reason" placeholder="กรอกเหตุผล..."></textarea>
+      <div class="report-actions">
+        <button id="report-cancel" class="cancel-btn">Cancel</button>
+        <button id="report-submit" class="submit-btn">Report</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     document.querySelector('.sandbox-btn').addEventListener('click', () => {
       window.location.href = '/sand';
@@ -258,6 +270,16 @@
 
       document.getElementById('post-box').innerHTML = html;
 
+      // เพิ่มปุ่ม ⋮ ให้โพสต์หลัก
+      const postHeader = document.querySelector('.post-header');
+      addOptionsButton(postHeader);
+
+      // เพิ่มปุ่ม ⋮ ให้ทุกคอมเมนต์
+      document.querySelectorAll('.single-comment').forEach(c => {
+        const header = c.querySelector('h5');
+        addOptionsButton(header, true);
+      });
+
       // ติดตั้ง logic คอมเมนต์
       setupCommentComposer(post.id);
     }
@@ -408,6 +430,60 @@
         }
       });
     }
+
+    // ฟังก์ชันเพิ่มปุ่ม ⋮ + เมนู
+    function addOptionsButton(targetElement, isComment = false) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'options-wrapper';
+
+      const btn = document.createElement('button');
+      btn.className = 'options-btn';
+      btn.textContent = '...';
+
+      const menu = document.createElement('div');
+      menu.className = 'options-menu';
+      menu.innerHTML = `
+    <button class="change-btn">change</button>
+    <button class="delete-btn">delete</button>
+    <button class="report-btn">report</button>
+  `;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
+      });
+
+      document.addEventListener('click', () => {
+        menu.style.display = 'none';
+      });
+
+      menu.querySelector('.report-btn').addEventListener('click', () => {
+        openReportPopup(isComment ? 'comment' : 'post');
+      });
+
+      wrapper.appendChild(btn);
+      wrapper.appendChild(menu);
+      targetElement.appendChild(wrapper);
+    }
+
+    // popup รายงาน
+    function openReportPopup(type) {
+      const overlay = document.getElementById('report-overlay');
+      const cancelBtn = document.getElementById('report-cancel');
+      const submitBtn = document.getElementById('report-submit');
+      const reason = document.getElementById('report-reason');
+
+      overlay.style.display = 'flex';
+      reason.value = '';
+
+      cancelBtn.onclick = () => (overlay.style.display = 'none');
+      submitBtn.onclick = () => {
+        if (!reason.value.trim()) return alert('กรุณากรอกเหตุผล');
+        alert(`รายงาน${type} ส่งแล้ว: ${reason.value}`);
+        overlay.style.display = 'none';
+      };
+    }
+
 
   </script>
 </body>

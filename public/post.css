@@ -660,6 +660,114 @@ body {
   transform: scale(1.03);
 }
 
+/* ⋮ ปุ่มเมนู */
+.options-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #555;
+  padding: 2px 6px;
+}
+
+.options-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.options-menu {
+  position: absolute;
+  right: 0;
+  top: 25px;
+  background: #f4f4f4;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  display: none;
+  flex-direction: column;
+  min-width: 130px;
+  z-index: 100;
+}
+
+.options-menu button {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #333;
+  transition: background 0.2s;
+}
+
+.options-menu button:hover {
+  background: #e3f2fd;
+}
+
+/* Popup รายงาน */
+.report-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.report-modal {
+  background: #fff;
+  padding: 20px 25px;
+  border-radius: 12px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.report-modal h3 {
+  color: #0050d4;
+  font-weight: 600;
+}
+
+.report-modal textarea {
+  resize: none;
+  height: 80px;
+  padding: 8px;
+  border: 1px solid #b3e5fc;
+  border-radius: 8px;
+  outline: none;
+}
+
+.report-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.report-actions .cancel-btn {
+  background: #eee;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #0050d4;
+  font-weight: 600;
+}
+
+.report-actions .submit-btn {
+  background: linear-gradient(90deg,#0050d4,#007bff);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+
 /* รองรับมือถือ */
 @media (max-width: 768px) {
   .image-preview-content img {
