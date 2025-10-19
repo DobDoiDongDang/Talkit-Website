@@ -28,25 +28,24 @@ sandRoute.get("/", async (c) => {
 
 // code execution endpoint
 sandRoute.post("/run", async (c) => {
-  const form = await c.req.formData();
-  const code = form.get("code") as string;
-  const pythonApiUrl = process.env.PYTHON_LAMBDA_API;
-  if (!pythonApiUrl) {
-    return c.json({ error: "PYTHON_LAMBDA_API is not configured." }, 500);
-  }
+  console.log("Received code execution request.");
+  const { code } = await c.req.json(); 
+
   try {
-    const response = await fetch(pythonApiUrl, {
+    const response = await fetch("http://localhost:8000/run", { // <-- fix URL
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code }),
     });
+
     const result = await response.json();
+    console.log("Execution result:", result);
     return c.json(result);
   } catch (error) {
+    console.error(error);
     return c.json({ error: "Failed to execute code." }, 500);
   }
 });
+
 
 export { sandRoute };

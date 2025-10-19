@@ -207,7 +207,8 @@ print("X =", x)
                 if (!res.ok) throw new Error(`ข้อผิดพลาด: ${res.statusText}`);
 
                 const data = await res.json();
-                resultBox.textContent = data.output || 'ไม่มีผลลัพธ์';
+                console.log(data);
+                resultBox.textContent = data.result || 'ไม่มีผลลัพธ์';
             } catch (error) {
                 resultBox.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
             }

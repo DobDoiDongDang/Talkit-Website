@@ -319,13 +319,46 @@
           wrap.remove();
         });
 
-        // ปุ่ม Run เป็น UI เท่านั้น (ให้เหมือน create_post)
-        runBtn.addEventListener('click', () => {
-          // คุณสามารถใส่ logic รันโค้ดได้ภายหลัง
-          // ตอนนี้ทำให้ปุ่มมี feedback เล็กน้อย
+        // ปุ่ม Run ใน composer: เรียกใช้งาน sandbox endpoint เหมือน run-btn ตัวอื่น
+        runBtn.addEventListener('click', async () => {
+          const origText = runBtn.textContent;
           runBtn.disabled = true;
           runBtn.textContent = 'Running...';
-          setTimeout(() => { runBtn.disabled = false; runBtn.textContent = 'Run'; }, 600);
+
+          // หา element ผลลัพธ์ภายใน footer (หรือสร้างใหม่ถ้าไม่มี)
+          const footerEl = wrap.querySelector('.code-footer') || runBtn.parentElement;
+          let resEl = footerEl.querySelector('.code-result');
+          if (!resEl) {
+            resEl = document.createElement('div');
+            resEl.className = 'code-result';
+            resEl.style.whiteSpace = 'pre-wrap';
+            resEl.style.marginTop = '8px';
+            footerEl.insertBefore(resEl, runBtn);
+          }
+
+          resEl.textContent = 'กำลังประมวลผล...';
+
+          try {
+            const code = ta.value || '';
+            const res = await fetch('/sand/run', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code })
+            });
+
+            if (!res.ok) {
+              const txt = await res.text().catch(() => res.statusText);
+              resEl.textContent = `ข้อผิดพลาด: ${txt}`;
+            } else {
+              const data = await res.json().catch(() => ({}));
+              resEl.textContent = data.result || 'ไม่มีผลลัพธ์';
+            }
+          } catch (err) {
+            resEl.textContent = `เกิดข้อผิดพลาด: ${err && err.message ? err.message : err}`;
+          }
+
+          runBtn.disabled = false;
+          runBtn.textContent = origText;
         });
 
         codeList.appendChild(wrap);
@@ -419,7 +452,7 @@
             resEl.className = 'code-result';
             resEl.style.whiteSpace = 'pre-wrap';
             resEl.style.marginTop = '8px';
-            footer.appendChild(resEl);
+            footer.insertBefore(resEl, runBtn);
           }
 
           resEl.textContent = 'กำลังประมวลผล...';
@@ -436,7 +469,7 @@
               resEl.textContent = `ข้อผิดพลาด: ${txt}`;
             } else {
               const data = await res.json().catch(() => ({}));
-              resEl.textContent = data.output || 'ไม่มีผลลัพธ์';
+              resEl.textContent = data.result || 'ไม่มีผลลัพธ์';
             }
           } catch (err) {
             resEl.textContent = `เกิดข้อผิดพลาด: ${err.message}`;
