@@ -26,4 +26,26 @@ sandRoute.get("/", async (c) => {
   return c.html(await loadPage("sandbox.html"));
 });
 
+sandRoute.post("/run", async (c) => {
+  const form = await c.req.formData();
+  const code = form.get("code") as string;
+  const pythonApiUrl = process.env.PYTHON_LAMBDA_API;
+  if (!pythonApiUrl) {
+    return c.json({ error: "PYTHON_LAMBDA_API is not configured." }, 500);
+  }
+  try {
+    const response = await fetch(pythonApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ code }),
+    });
+    const result = await response.json();
+    return c.json(result);
+  } catch (error) {
+    return c.json({ error: "Failed to execute code." }, 500);
+  }
+});
+
 export { sandRoute };

@@ -189,6 +189,29 @@ print("X =", x)
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
         });
+
+        // Run button logic
+        const runBtn = document.getElementById('run-btn');
+        const resultBox = document.getElementById('result-box');
+        runBtn.addEventListener('click', async () => {
+            const code = textarea.value;
+            resultBox.textContent = 'กำลังประมวลผล...';
+
+            try {
+                const res = await fetch('/sand/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+
+                if (!res.ok) throw new Error(`ข้อผิดพลาด: ${res.statusText}`);
+
+                const data = await res.json();
+                resultBox.textContent = data.output || 'ไม่มีผลลัพธ์';
+            } catch (error) {
+                resultBox.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
+            }
+        });
     </script>
 </body>
 
