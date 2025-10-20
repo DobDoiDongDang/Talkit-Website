@@ -3,10 +3,7 @@ output "alb_dns_name" {
   value       = aws_lb.main.dns_name
 }
 
-output "efs_id" {
-  description = "The ID of the EFS file system"
-  value       = aws_efs_file_system.main.id
-}
+# REMOVED efs_id output
 
 output "rds_endpoint" {
   description = "The connection endpoint for the RDS instance"

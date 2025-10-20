@@ -5,7 +5,7 @@ set -euo pipefail # Stop on error
 # 1. INSTALL ALL DEPENDENCIES
 # -----------------------------------------------------------------
 yum update -y
-yum install -y git amazon-efs-utils
+yum install -y git # REMOVED amazon-efs-utils
 
 # Install Node.js 18
 curl -sL https://rpm.nodesource.com/setup_18.x | sudo bash -
@@ -21,11 +21,8 @@ systemctl enable docker
 yum install -y docker-compose-plugin
 
 # -----------------------------------------------------------------
-# 2. MOUNT EFS
+# 2. MOUNT EFS - REMOVED
 # -----------------------------------------------------------------
-mkdir -p /mnt/efs
-mount -t efs ${efs_id}:/ /mnt/efs
-echo "${efs_id}:/ /mnt/efs efs _netdev,tls 0 0" >> /etc/fstab
 
 # -----------------------------------------------------------------
 # 3. CLONE APP REPOSITORY
@@ -60,9 +57,6 @@ npm install
 
 # Push database schema with Drizzle
 echo "Running 'npm run drizzle:push'..."
-# Note: Ensure DB is reachable. RDS can take time to start.
-# This might fail on first boot if DB isn't ready.
-# A more robust solution uses a wait-for-it script.
 npm run drizzle:push
 
 # Start the application with PM2
@@ -90,7 +84,7 @@ echo "Running Docker Compose startup script: $SCRIPT_TO_RUN"
 # 6. SET PERMISSIONS
 # -----------------------------------------------------------------
 chown -R ec2-user:ec2-user $APP_DIR
-chown -R ec2-user:ec2-user /mnt/efs
+# REMOVED chown for /mnt/efs
 chown -R ec2-user:ec2-user /home/ec2-user/.pm2
 
 echo "User data script finished successfully."

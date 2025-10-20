@@ -179,7 +179,7 @@ resource "aws_security_group" "alb" {
 # Security Group for EC2
 resource "aws_security_group" "ec2" {
   name        = "talkit-ec2-sg"
-  description = "Allow traffic from ALB, EFS, SSH, and internal services"
+  description = "Allow traffic from ALB, SSH, and internal services"
   vpc_id      = aws_vpc.main.id
 
   # Allow Port 3000 from ALB (for Node.js app)
@@ -206,13 +206,7 @@ resource "aws_security_group" "ec2" {
     cidr_blocks = [var.my_ip]
   }
 
-  # Allow NFS from EFS
-  ingress {
-    from_port       = 2049
-    to_port         = 2049
-    protocol        = "tcp"
-    security_groups = [aws_security_group.efs.id]
-  }
+  # REMOVED EFS Ingress Rule
 
   egress {
     from_port   = 0
@@ -226,30 +220,7 @@ resource "aws_security_group" "ec2" {
   }
 }
 
-# Security Group for EFS
-resource "aws_security_group" "efs" {
-  name        = "talkit-efs-sg"
-  description = "Allow NFS traffic from EC2"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port       = 2049
-    to_port         = 2049
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ec2.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "talkit-efs-sg"
-  }
-}
+# REMOVED EFS Security Group
 
 # Security Group for RDS
 resource "aws_security_group" "rds" {
@@ -320,28 +291,8 @@ resource "aws_lb_listener" "http" {
 }
 
 # -----------------------------------------------------------------
-# EFS (ELASTIC FILE SYSTEM)
+# EFS (ELASTIC FILE SYSTEM) - REMOVED
 # -----------------------------------------------------------------
-
-resource "aws_efs_file_system" "main" {
-  creation_token = "talkit-efs"
-
-  tags = {
-    Name = "talkit-efs"
-  }
-}
-
-resource "aws_efs_mount_target" "private_1" {
-  file_system_id  = aws_efs_file_system.main.id
-  subnet_id       = aws_subnet.private_1.id
-  security_groups = [aws_security_group.efs.id]
-}
-
-resource "aws_efs_mount_target" "private_2" {
-  file_system_id  = aws_efs_file_system.main.id
-  subnet_id       = aws_subnet.private_2.id
-  security_groups = [aws_security_group.efs.id]
-}
 
 # -----------------------------------------------------------------
 # EC2 INSTANCE
@@ -412,8 +363,8 @@ resource "aws_instance" "main" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   key_name               = var.ec2_key_name
 
+  # REMOVED efs_id from template variables
   user_data = base64encode(templatefile("user_data.sh.tpl", {
-    efs_id                 = aws_efs_file_system.main.id
     db_url                 = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.talkit_db.endpoint}:${aws_db_instance.talkit_db.port}/${aws_db_instance.talkit_db.db_name}"
     aws_region             = self.provider.region
     cognito_client_id      = aws_cognito_user_pool_client.client.id
@@ -447,7 +398,7 @@ resource "aws_db_subnet_group" "default" {
   }
 }
 
-resource "aws_db_instance" "talkit_db" { # Renamed for clarity
+resource "aws_db_instance" "talkit_db" {
   identifier           = "talkit-db"
   engine               = "postgres"
   engine_version       = "15.3"
@@ -551,7 +502,7 @@ resource "aws_cognito_user_pool_client" "client" {
 
 resource "aws_s3_bucket" "profile_uploads" {
   bucket        = "talkit-profile-uploads-${random_id.suffix.hex}"
-  force_destroy = true # Good for dev, remove for prod
+  force_destroy = true
 
   tags = {
     Name = "talkit-profile-uploads"
@@ -607,7 +558,7 @@ resource "aws_s3_bucket_cors_configuration" "profile_uploads_cors" {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "PUT", "POST", "DELETE", "HEAD"]
     allowed_origins = [
-      "*" # Should be restricted to your domain in production
+      "*"
     ]
     expose_headers = [
       "ETag",
