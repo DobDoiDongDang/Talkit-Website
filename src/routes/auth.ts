@@ -83,7 +83,10 @@ authRoute.post("/login", async (c) => {
 
     const dbUser = dbUsers[0];
     if (!dbUser) throw new Error("ไม่สามารถบันทึกหรือดึงข้อมูลผู้ใช้จากฐานข้อมูลได้");
-
+  
+    if (dbUser.status === 'banned') {
+      return c.json({ error: 'บัญชีของคุณถูกแบน' }, 403);
+    }
     // เก็บ AccessToken ใน Cookie (HTTP-only)
     setCookie(c, "token", accessToken, {
       httpOnly: true,

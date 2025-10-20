@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp, varchar, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, serial, integer, text, timestamp, varchar, uniqueIndex, uuid, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 /**
@@ -28,7 +28,12 @@ export const users = pgTable('users', {
     // 6. User Profile URL
     userProfile: text('user_profile'),
 
-    // 7. Timestamps
+    // 7. User Status - เพิ่มใหม่
+    status: varchar('status', { length: 20 })
+        .notNull()
+        .default('active'), // 'active', 'inactive', 'suspended', 'banned', 'pending'
+
+    // 8. Timestamps
     createdAt: timestamp('created_at')
         .notNull()
         .default(sql`CURRENT_TIMESTAMP`),
@@ -38,9 +43,10 @@ export const users = pgTable('users', {
         .$onUpdate(() => new Date()),
 
 }, (table) => {
-    // กำหนด Index เพิ่มเติมเพื่อความเร็วในการค้นหาด้วย Email
+    // กำหนด Index เพิ่มเติมเพื่อความเร็วในการค้นหาด้วย Email และ Status
     return {
         emailIndex: uniqueIndex('email_idx').on(table.email),
+        statusIndex: index('status_idx').on(table.status), // เพิ่ม index สำหรับ status
     };
 });
 
@@ -102,4 +108,30 @@ export const comment_code = pgTable('comment_code', {
     commentId: integer('comment_id').notNull(), // FK -> comments.id
     code: text('code').notNull(),
     createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ตาราง reports สำหรับรายงานโพสต์หรือคอมเมนต์
+export const reports = pgTable('reports', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull(), // ผู้รายงาน (FK -> users.id)
+  
+  // เชื่อมโยงกับ post หรือ comment (อย่างใดอย่างหนึ่ง)
+  postId: integer('post_id'), // FK -> posts.id (optional)
+  commentId: integer('comment_id'), // FK -> comments.id (optional)
+  
+  // รายละเอียดการรายงาน
+  description: text('description').notNull(), // รายละเอียดการรายงาน
+  
+  // สถานะการจัดการ
+  status: varchar('status', { length: 20 })
+    .notNull()
+    .default('pending'), // 'pending', 'reviewed', 'resolved', 'dismissed'
+  
+  // วันที่รายงานและจัดการ
+  createdAt: timestamp('created_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+  reviewedAt: timestamp('reviewed_at'),
+  reviewedBy: integer('reviewed_by'), // admin/moderator ที่จัดการ (FK -> users.id)
 });
