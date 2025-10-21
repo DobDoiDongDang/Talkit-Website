@@ -27,3 +27,24 @@ variable "ec2_key_name" {
   type        = string
   default     = "" # Make sure to set this in your tfvars
 }
+
+variable "aws_access_key" {
+  description = "AWS Access Key ID (for Lab environment)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "aws_secret_key" {
+  description = "AWS Secret Access Key (for Lab environment)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "aws_session_token" {
+  description = "AWS Session Token (for Lab environment)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
