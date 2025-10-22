@@ -12,10 +12,14 @@ terraform {
 # -----------------------------------------------------------------
 provider "aws" {
   region = "us-east-1"
+
+  # For AWS Academy Lab environment
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
   token      = var.aws_session_token
 }
+
+data "aws_region" "current" {}
 
 # -----------------------------------------------------------------
 # NETWORKING (VPC, SUBNETS, ROUTING)
@@ -35,7 +39,6 @@ resource "aws_vpc" "main" {
 # Internet Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-
   tags = {
     Name = "talkit-igw"
   }
@@ -47,18 +50,15 @@ resource "aws_subnet" "public_1" {
   cidr_block              = "10.0.1.0/24"
   availability_zone       = "us-east-1a"
   map_public_ip_on_launch = true
-
   tags = {
     Name = "talkit-public-1"
   }
 }
-
 resource "aws_subnet" "public_2" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.2.0/24"
   availability_zone       = "us-east-1b"
   map_public_ip_on_launch = true
-
   tags = {
     Name = "talkit-public-2"
   }
@@ -70,18 +70,15 @@ resource "aws_subnet" "private_1" {
   cidr_block              = "10.0.3.0/24"
   availability_zone       = "us-east-1a"
   map_public_ip_on_launch = false
-
   tags = {
     Name = "talkit-private-1"
   }
 }
-
 resource "aws_subnet" "private_2" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.4.0/24"
   availability_zone       = "us-east-1b"
   map_public_ip_on_launch = false
-
   tags = {
     Name = "talkit-private-2"
   }
@@ -91,104 +88,88 @@ resource "aws_subnet" "private_2" {
 resource "aws_eip" "nat" {
   domain = "vpc"
 }
-
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public_1.id
-
   tags = {
     Name = "talkit-nat-gw"
   }
-
   depends_on = [aws_internet_gateway.main]
 }
 
 # --- Route Tables ---
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
-
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.main.id
   }
-
   tags = {
     Name = "talkit-public-rt"
   }
 }
-
 resource "aws_route_table_association" "public_1" {
   subnet_id      = aws_subnet.public_1.id
   route_table_id = aws_route_table.public.id
 }
-
 resource "aws_route_table_association" "public_2" {
   subnet_id      = aws_subnet.public_2.id
   route_table_id = aws_route_table.public.id
 }
-
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
-
   route {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.main.id
   }
-
   tags = {
     Name = "talkit-private-rt"
   }
 }
-
 resource "aws_route_table_association" "private_1" {
   subnet_id      = aws_subnet.private_1.id
   route_table_id = aws_route_table.private.id
 }
-
 resource "aws_route_table_association" "private_2" {
   subnet_id      = aws_subnet.private_2.id
   route_table_id = aws_route_table.private.id
 }
 
+
 # -----------------------------------------------------------------
 # SECURITY GROUPS
 # -----------------------------------------------------------------
 
-# Security Group for ALB
 resource "aws_security_group" "alb" {
   name        = "talkit-alb-sg"
   description = "Allow HTTP inbound traffic"
   vpc_id      = aws_vpc.main.id
-
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   tags = {
     Name = "talkit-alb-sg"
   }
 }
 
-# Security Group for EC2
 resource "aws_security_group" "ec2" {
   name        = "talkit-ec2-sg"
   description = "Allow traffic from ALB, SSH, and internal services"
   vpc_id      = aws_vpc.main.id
 
-  # Allow Port 3000 from ALB (for Node.js app)
+  # Allow Port 8080 from ALB (for Node.js app)
   ingress {
-    from_port       = 3000
-    to_port         = 3000
+    from_port       = 8080
+    to_port         = 8080
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
@@ -198,7 +179,7 @@ resource "aws_security_group" "ec2" {
     from_port       = 8000
     to_port         = 8000
     protocol        = "tcp"
-    self            = true # Allows traffic from other resources in this SG
+    self            = true
   }
 
   # Allow SSH from your IP
@@ -208,8 +189,6 @@ resource "aws_security_group" "ec2" {
     protocol    = "tcp"
     cidr_blocks = [var.my_ip]
   }
-
-  # REMOVED EFS Ingress Rule
 
   egress {
     from_port   = 0
@@ -223,29 +202,22 @@ resource "aws_security_group" "ec2" {
   }
 }
 
-# REMOVED EFS Security Group
-
-# Security Group for RDS
 resource "aws_security_group" "rds" {
   name        = "talkit-rds-sg"
   description = "Security group for RDS PostgreSQL"
   vpc_id      = aws_vpc.main.id
-
-  # Allow PostgreSQL from EC2 only
   ingress {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.ec2.id]
   }
-
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   tags = {
     Name = "talkit-rds-sg"
   }
@@ -261,7 +233,6 @@ resource "aws_lb" "main" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets            = [aws_subnet.public_1.id, aws_subnet.public_2.id]
-
   tags = {
     Name = "talkit-alb"
   }
@@ -269,12 +240,12 @@ resource "aws_lb" "main" {
 
 resource "aws_lb_target_group" "main" {
   name     = "talkit-tg"
-  port     = 3000 # Point to Node.js port
+  port     = 8080 # Point to Node.js port 8080
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    path = "/" # Make sure your app responds to '/'
+    path = "/"
   }
 
   tags = {
@@ -294,86 +265,46 @@ resource "aws_lb_listener" "http" {
 }
 
 # -----------------------------------------------------------------
-# EFS (ELASTIC FILE SYSTEM) - REMOVED
-# -----------------------------------------------------------------
-
-# -----------------------------------------------------------------
 # EC2 INSTANCE
 # -----------------------------------------------------------------
 
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
-
   filter {
     name   = "name"
     values = ["amzn2-ami-hvm-*-x86_64-gp2"]
   }
 }
 
-# --- IAM Role for EC2 ---
-resource "aws_iam_role" "ec2_role" {
-  name = "talkit-ec2-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name = "talkit-ec2-role"
-  }
-}
-
-# Policy for AWS Systems Manager (Good Practice)
-resource "aws_iam_role_policy_attachment" "ssm_policy" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-# Policy for S3 Access
-resource "aws_iam_role_policy_attachment" "s3_policy" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-}
-
-# Policy for Cognito Access
-resource "aws_iam_role_policy_attachment" "cognito_policy" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonCognitoReadOnlyAccess"
-}
-
-resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "talkit-ec2-instance-profile"
-  role = aws_iam_role.ec2_role.name
-}
+# --- IAM Role removed (per lab restrictions) ---
 
 # --- Single EC2 Instance ---
 resource "aws_instance" "main" {
   ami           = data.aws_ami.amazon_linux.id
   instance_type = "t2.micro"
-  subnet_id     = aws_subnet.private_1.id # Place in a private subnet
+  subnet_id     = aws_subnet.private_1.id
 
   vpc_security_group_ids = [aws_security_group.ec2.id]
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-  key_name               = var.ec2_key_name
+  # iam_instance_profile removed
+  key_name = var.ec2_key_name
 
-  # REMOVED efs_id from template variables
   user_data = base64encode(templatefile("user_data.sh.tpl", {
-    db_url                 = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.talkit_db.endpoint}:${aws_db_instance.talkit_db.port}/${aws_db_instance.talkit_db.db_name}"
-    aws_region             = self.provider.region
+    db_user                = var.db_username
+    db_pass                = var.db_password
+    db_host                = aws_db_instance.talkit_db.endpoint
+    db_port                = aws_db_instance.talkit_db.port
+    db_name                = aws_db_instance.talkit_db.db_name
+    
+    aws_region             = data.aws_region.current.name
     cognito_client_id      = aws_cognito_user_pool_client.client.id
     cognito_user_pool_id   = aws_cognito_user_pool.main.id
     aws_s3_bucket          = aws_s3_bucket.profile_uploads.bucket
-    cognito_jwks_url       = "https://cognito-idp.${self.provider.region}.amazonaws.com/${aws_cognito_user_pool.main.id}/.well-known/jwks.json"
+    cognito_jwks_url       = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${aws_cognito_user_pool.main.id}/.well-known/jwks.json"
+    
+    aws_access_key    = var.aws_access_key
+    aws_secret_key    = var.aws_secret_key
+    aws_session_token = var.aws_session_token
   }))
 
   tags = {
@@ -385,7 +316,7 @@ resource "aws_instance" "main" {
 resource "aws_lb_target_group_attachment" "main" {
   target_group_arn = aws_lb_target_group.main.arn
   target_id        = aws_instance.main.id
-  port             = 3000 # Point to Node.js port
+  port             = 8080 # Point to Node.js port 8080
 }
 
 # -----------------------------------------------------------------
@@ -394,8 +325,7 @@ resource "aws_lb_target_group_attachment" "main" {
 
 resource "aws_db_subnet_group" "default" {
   name       = "talkit-subnet-group"
-  subnet_ids = [aws_subnet.private_1.id, aws_subnet.private_2.id] # Use private subnets
-
+  subnet_ids = [aws_subnet.private_1.id, aws_subnet.private_2.id]
   tags = {
     Name = "Talkit DB subnet group"
   }
@@ -404,7 +334,7 @@ resource "aws_db_subnet_group" "default" {
 resource "aws_db_instance" "talkit_db" {
   identifier           = "talkit-db"
   engine               = "postgres"
-  engine_version       = "15.3"
+  engine_version       = "15" # Fixed version
   instance_class       = "db.t3.micro"
   allocated_storage    = 20
   storage_type         = "gp2"
@@ -417,7 +347,7 @@ resource "aws_db_instance" "talkit_db" {
   db_subnet_group_name   = aws_db_subnet_group.default.name
 
   multi_az            = false
-  publicly_accessible = false # Secure
+  publicly_accessible = false
   skip_final_snapshot = true
 
   backup_retention_period = 1
@@ -435,7 +365,6 @@ resource "aws_db_instance" "talkit_db" {
 
 resource "aws_cognito_user_pool" "main" {
   name = "talkit-user-pool"
-
   password_policy {
     minimum_length    = 8
     require_lowercase = true
@@ -443,35 +372,29 @@ resource "aws_cognito_user_pool" "main" {
     require_symbols   = true
     require_uppercase = true
   }
-
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
-
   account_recovery_setting {
     recovery_mechanism {
       name     = "verified_email"
       priority = 1
     }
   }
-
   schema {
     attribute_data_type = "String"
     name                = "email"
     required            = true
     mutable             = true
-
     string_attribute_constraints {
       min_length = 7
       max_length = 256
     }
   }
-
   schema {
     attribute_data_type = "String"
     name                = "name"
     required            = true
     mutable             = true
-
     string_attribute_constraints {
       min_length = 1
       max_length = 256
@@ -481,18 +404,14 @@ resource "aws_cognito_user_pool" "main" {
 
 resource "aws_cognito_user_pool_client" "client" {
   name = "talkit-client"
-
   user_pool_id = aws_cognito_user_pool.main.id
-
   explicit_auth_flows = [
     "ALLOW_USER_PASSWORD_AUTH",
     "ALLOW_REFRESH_TOKEN_AUTH"
   ]
-
   prevent_user_existence_errors = "ENABLED"
   access_token_validity         = 1
   refresh_token_validity        = 30
-
   token_validity_units {
     access_token  = "days"
     refresh_token = "days"
@@ -500,12 +419,15 @@ resource "aws_cognito_user_pool_client" "client" {
 }
 
 # -----------------------------------------------------------------
-# S3 BUCKET
+# S3 BUCKET (UPDATED)
 # -----------------------------------------------------------------
 
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 resource "aws_s3_bucket" "profile_uploads" {
-  bucket        = "talkit-profile-uploads-${random_id.suffix.hex}"
-  force_destroy = true
+  bucket = "talkit-bucket-${random_id.suffix.hex}"
 
   tags = {
     Name = "talkit-profile-uploads"
@@ -514,7 +436,6 @@ resource "aws_s3_bucket" "profile_uploads" {
 
 resource "aws_s3_bucket_ownership_controls" "profile_uploads" {
   bucket = aws_s3_bucket.profile_uploads.id
-
   rule {
     object_ownership = "BucketOwnerPreferred"
   }
@@ -522,14 +443,12 @@ resource "aws_s3_bucket_ownership_controls" "profile_uploads" {
 
 resource "aws_s3_bucket_acl" "profile_uploads" {
   depends_on = [aws_s3_bucket_ownership_controls.profile_uploads]
-
-  bucket = aws_s3_bucket.profile_uploads.id
-  acl    = "public-read"
+  bucket     = aws_s3_bucket.profile_uploads.id
+  acl        = "public-read"
 }
 
 resource "aws_s3_bucket_public_access_block" "profile_uploads" {
   bucket = aws_s3_bucket.profile_uploads.id
-
   block_public_acls       = false
   block_public_policy     = false
   ignore_public_acls      = false
@@ -548,15 +467,13 @@ resource "aws_s3_bucket_policy" "profile_uploads_public_read" {
       }
     ]
   })
-}
-
-resource "random_id" "suffix" {
-  byte_length = 4
+  
+  # Added depends_on to fix 403 error
+  depends_on = [aws_s3_bucket_public_access_block.profile_uploads]
 }
 
 resource "aws_s3_bucket_cors_configuration" "profile_uploads_cors" {
   bucket = aws_s3_bucket.profile_uploads.id
-
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "PUT", "POST", "DELETE", "HEAD"]

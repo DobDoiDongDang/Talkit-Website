@@ -3,8 +3,6 @@ output "alb_dns_name" {
   value       = aws_lb.main.dns_name
 }
 
-# REMOVED efs_id output
-
 output "rds_endpoint" {
   description = "The connection endpoint for the RDS instance"
   value       = aws_db_instance.talkit_db.endpoint
