@@ -224,115 +224,323 @@ body {
   font-weight: 600;
 }
 
+/* ===== IDE-style Code Blocks ===== */
 .code-block {
-  margin: 10px 0;
-  border: 1px solid #007bff;
+  margin: 15px 0;
+  border: 1px solid #e1e4e8;
   border-radius: 8px;
+  background: #f6f8fa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  background: #f8faff;
-  box-shadow: 0 2px 10px rgba(0, 91, 255, 0.1);
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  position: relative;
 }
 
 .code-header {
-  background: #0050d4;
-  color: white;
-  padding: 6px 10px;
+  background: linear-gradient(90deg, #24292e, #586069);
+  color: #ffffff;
+  padding: 10px 15px;
+  font-size: 13px;
   font-weight: 600;
-}
-
-.code-content {
-  padding: 10px;
-  font-family: monospace;
-  background: #fefefe;
-  color: #002;
-  overflow-x: auto;
-}
-
-.code-footer {
+  border-bottom: 1px solid #e1e4e8;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #e3f2fd;
-  padding: 8px 12px;
+}
+
+.code-header::before {
+  content: "💻";
+  margin-right: 8px;
+}
+
+/* Code content with line numbers - แก้ไขส่วนนี้ */
+.code-content-wrapper {
+  position: relative;
+  background: #ffffff;
+  max-height: 400px;
+  overflow: auto;
+  display: flex;
+  min-height: 100px;
+}
+
+/* Line numbers - แก้ไขให้ไม่ทะลุ */
+.line-numbers {
+  position: sticky;
+  left: 0;
+  top: 0;
+  min-width: 50px;
+  max-width: 50px;
+  padding: 15px 8px;
+  background: #f1f3f4;
+  border-right: 1px solid #e1e4e8;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6a737d;
+  text-align: right;
+  user-select: none;
+  white-space: pre;
+  flex-shrink: 0;
+  overflow: hidden;
+  word-break: keep-all;
+}
+
+/* Code content - แก้ไขให้ไม่ overlap */
+.code-content {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 15px;
+  margin: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  white-space: pre;
+  overflow-wrap: break-word;
+  color: #24292e;
+  flex: 1;
+  min-width: 0;
+  width: calc(100% - 50px);
+}
+
+/* สำหรับ textarea ใน comment composer */
+.code-content[contenteditable="true"],
+.code-content textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Code footer with output and run button */
+.code-footer {
+  background: #f6f8fa;
+  padding: 10px 15px;
+  border-top: 1px solid #e1e4e8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .run-btn {
-  background: linear-gradient(90deg, #032496, #0050d4);
-  color: white;
+  background: linear-gradient(90deg, #28a745, #34d058);
+  color: #ffffff;
   border: none;
-  border-radius: 8px;
-  padding: 6px 14px;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.run-btn::before {
+  content: "▶";
+  font-size: 10px;
 }
 
 .run-btn:hover {
-  background: #0030b8;
+  background: linear-gradient(90deg, #22863a, #28a745);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
 }
 
-/* Python box */
-.python-box {
-  background: #f8faff;
-  border-radius: 12px;
-  margin-top: 20px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0, 91, 255, 0.1);
+.run-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.python-header {
-  background: #0050d4;
-  color: white;
+.run-btn:disabled::before {
+  content: "⏳";
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Code output styling */
+.code-output {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
   padding: 8px 12px;
-  border-radius: 8px 8px 0 0;
-  font-weight: 600;
+  margin: 0;
+  white-space: pre-wrap;
+  max-height: 100px;
+  overflow-y: auto;
+  flex: 1;
+  min-width: 200px;
+  word-wrap: break-word;
 }
 
-.python-box textarea {
-  width: 100%;
-  border: 2px solid #007bff;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  padding: 12px;
-  min-height: 120px;
-  resize: vertical;
-  outline: none;
-  font-size: 15px;
-  background: white;
+.code-output.success {
+  background: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
 }
 
-.python-box .result {
-  margin-top: 10px;
-  background: #e3f2fd;
+.code-output.error {
+  background: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+/* Syntax highlighting classes */
+.syntax-keyword { color: #d73a49; font-weight: 600; }
+.syntax-string { color: #032f62; }
+.syntax-comment { color: #6a737d; font-style: italic; }
+.syntax-number { color: #005cc5; }
+.syntax-function { color: #6f42c1; }
+.syntax-variable { color: #e36209; }
+
+/* Small code blocks in comments - แก้ไขให้เหมาะสม */
+.small-code {
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.small-code .code-header {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.small-code .line-numbers {
+  min-width: 35px;
+  max-width: 35px;
+  padding: 10px 5px;
+  font-size: 10px;
+}
+
+.small-code .code-content {
   padding: 10px;
-  border-radius: 8px;
-  color: #003366;
-  font-weight: 500;
+  font-size: 12px;
+  width: calc(100% - 35px);
 }
 
-.button-group {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 10px;
+.small-code .code-content-wrapper {
+  max-height: 200px;
 }
 
-.btn {
+.small-code .code-footer {
+  padding: 6px 10px;
+}
+
+.small-code .run-btn {
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+/* Close button for editable code blocks */
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #dc3545;
+  color: #ffffff;
   border: none;
-  border-radius: 10px;
-  padding: 8px 16px;
-  font-weight: 600;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
-  background: #4fc3f7;
-  color: white;
-  transition: 0.2s;
+  font-weight: 700;
+  font-size: 14px;
+  z-index: 10;
+  transition: all 0.2s ease;
 }
 
-.btn.primary {
-  background: #007bff;
+.close-btn:hover {
+  background: #c82333;
+  transform: scale(1.1);
 }
 
-.btn:hover {
-  filter: brightness(0.9);
+/* Dark theme for code blocks */
+@media (prefers-color-scheme: dark) {
+  .code-block {
+    background: #0d1117;
+    border-color: #30363d;
+  }
+  
+  .code-content-wrapper {
+    background: #161b22;
+  }
+  
+  .code-content {
+    background: #161b22;
+    color: #c9d1d9;
+  }
+  
+  .line-numbers {
+    background: #21262d;
+    border-color: #30363d;
+    color: #8b949e;
+  }
+  
+  .syntax-keyword { color: #ff7b72; }
+  .syntax-string { color: #a5d6ff; }
+  .syntax-comment { color: #8b949e; }
+  .syntax-number { color: #79c0ff; }
+  .syntax-function { color: #d2a8ff; }
+  .syntax-variable { color: #ffa657; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .line-numbers {
+    min-width: 35px;
+    max-width: 35px;
+    font-size: 11px;
+    padding: 10px 5px;
+  }
+  
+  .code-content {
+    padding: 10px;
+    font-size: 12px;
+    width: calc(100% - 35px);
+  }
+  
+  .code-footer {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  
+  .code-output {
+    order: -1;
+    min-width: auto;
+  }
+  
+  .run-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* แก้ไขสำหรับ textarea ใน comment composer */
+.code-content.comment-textarea {
+  background: #ffffff;
+  border: 1px solid #e1e4e8;
+  border-radius: 0;
+  border-left: none;
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* เพิ่ม container เพื่อให้ line numbers และ content อยู่ในขอบเขตที่ถูกต้อง */
+.code-content-container {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* Comments */
@@ -624,159 +832,84 @@ body {
    ====================== */
 .image-preview-overlay {
   position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.8);
+  top: 0; 
+  left: 0;
+  width: 100vw; 
+  height: 100vh;
+  background: rgba(0,0,0,0.9);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
   cursor: zoom-out;
   padding: 20px;
+  backdrop-filter: blur(5px);
 }
 
 .image-preview-content {
   max-width: 90vw;
-  max-height: 85vh;
+  max-height: 90vh;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 25px rgba(255,255,255,0.3);
+  box-shadow: 0 0 50px rgba(255,255,255,0.2);
+  position: relative;
 }
 
 .image-preview-content img {
-  max-width: 80vw;
-  max-height: 80vh;
+  max-width: 85vw;
+  max-height: 85vh;
   object-fit: contain;
   border-radius: 10px;
   cursor: default;
-  transition: transform 0.25s ease;
+  transition: transform 0.3s ease;
 }
 
-.image-preview-content img:hover {
-  transform: scale(1.03);
-}
-
-/* ⋮ ปุ่มเมนู */
-.options-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #555;
-  padding: 2px 6px;
-}
-
-.options-wrapper {
-  position: relative;
-  display: inline-block;
-}
-
-.options-menu {
+/* เพิ่มปุ่มปิดในรูปขยาย */
+.image-preview-content::after {
+  content: '✕';
   position: absolute;
-  right: 0;
-  top: 25px;
-  background: #f4f4f4;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-  display: none;
-  flex-direction: column;
-  min-width: 130px;
-  z-index: 100;
-}
-
-.options-menu button {
-  background: none;
-  border: none;
-  text-align: left;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-weight: 500;
-  color: #333;
-  transition: background 0.2s;
-}
-
-.options-menu button:hover {
-  background: #e3f2fd;
-}
-
-/* Popup รายงาน */
-.report-overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.5);
+  top: 15px;
+  right: 15px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
-}
-
-.report-modal {
-  background: #fff;
-  padding: 20px 25px;
-  border-radius: 12px;
-  width: 320px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-
-.report-modal h3 {
-  color: #0050d4;
-  font-weight: 600;
-}
-
-.report-modal textarea {
-  resize: none;
-  height: 80px;
-  padding: 8px;
-  border: 1px solid #b3e5fc;
-  border-radius: 8px;
-  outline: none;
-}
-
-.report-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.report-actions .cancel-btn {
-  background: #eee;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
+  font-size: 18px;
   cursor: pointer;
-  color: #0050d4;
-  font-weight: 600;
+  transition: background 0.2s ease;
 }
 
-.report-actions .submit-btn {
-  background: linear-gradient(90deg,#0050d4,#007bff);
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
+.image-preview-content::after:hover {
+  background: rgba(255,0,0,0.8);
 }
-
 
 /* รองรับมือถือ */
 @media (max-width: 768px) {
   .image-preview-content img {
     max-width: 95vw;
-    max-height: 75vh;
+    max-height: 80vh;
+  }
+  
+  .clickable-image:hover {
+    transform: scale(1.02);
   }
 }
-/* Responsive: ย่อรูปพรีวิวในจอเล็ก */
-@media (max-width: 768px) {
-  #comment-image-preview img { max-width: 90px; max-height: 90px; }
-  .comment-pictures .comment-img { max-width: 110px; max-height: 110px; }
+
+/* เพิ่ม cursor pointer และ hover effect สำหรับรูปที่คลิกได้ */
+.clickable-image {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clickable-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 91, 255, 0.3);
 }

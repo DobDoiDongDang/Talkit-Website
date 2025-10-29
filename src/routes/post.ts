@@ -246,4 +246,178 @@ postRoute.get("/:postid", async (c) => {
   });
 });
 
+// GET route สำหรับหน้าแก้ไข
+postRoute.get('/edit_post', async (c) => {
+  return c.html(await loadPage("edit_post.html"));
+});
+
+ // PUT route สำหรับอัพเดทโพสต์
+postRoute.put('/posts/:id', async (c) => {
+  try {
+    const postId = parseInt(c.req.param("id"));
+    const userId = Number(c.req.header("userId")); // get userId from request headers
+    if (!userId || Number.isNaN(userId)) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // Parse multipart or plain fields
+    const body = await c.req.parseBody({ all: true });
+
+    const categoryId = Number((body.categoryId ?? "").toString());
+    const title = (body.title ?? "").toString();
+    const text = (body.text ?? "").toString();
+    const existingImages = (body as any).existingImages;
+    const existingCodes = (body as any).existingCodes;
+    const codesRaw = (body as any).codes;
+
+    // ตรวจสอบว่าเป็นเจ้าของโพสต์หรือไม่
+    const ownerRecord = await db.query.posts.findFirst({
+      where: eq(posts.id, postId),
+      columns: { userId: true },
+    });
+
+    if (!ownerRecord) {
+      return c.json({ error: 'ไม่พบโพสต์' }, 404);
+    }
+
+    if (ownerRecord.userId !== userId) {
+      return c.json({ error: 'ไม่มีสิทธิ์แก้ไขโพสต์นี้' }, 403);
+    }
+
+    // อัพเดทโพสต์
+        await db.update(posts).set({
+          categoryId: Number.isNaN(categoryId) ? undefined : categoryId,
+          title,
+          text,
+        }).where(eq(posts.id, postId));
+
+    // ลบรูปภาพและโค้ดเก่าทั้งหมด (recreate from provided existing lists)
+    await db.delete(post_picture).where(eq(post_picture.postId, postId));
+    await db.delete(post_code).where(eq(post_code.postId, postId));
+
+    // เพิ่มรูปภาพที่เหลืออยู่ (existingImages expected as JSON strings)
+    if (existingImages) {
+      const existingImagesArray = Array.isArray(existingImages) ? existingImages : [existingImages];
+      for (const imgStr of existingImagesArray) {
+        try {
+          const img = JSON.parse(imgStr);
+          await db.insert(post_picture).values({
+            postId,
+            url: img.url ?? null,
+          });
+        } catch (e) {
+          console.error('Error parsing existing image:', e);
+        }
+      }
+    }
+
+    // เพิ่มรูปภาพใหม่ (multipart images[] or images)
+    const imagesField = (body as any)["images[]"] ?? (body as any)["images"];
+    const newFiles = await normalizeFiles(imagesField);
+    for (const f of newFiles) {
+      try {
+        const url = await uploadToS3(f.data, userId, f.type);
+        await db.insert(post_picture).values({ postId, url });
+      } catch (e) {
+        console.error('Error uploading new image:', e);
+      }
+    }
+
+    // เพิ่มโค้ดที่เหลืออยู่ (existingCodes expected as JSON strings)
+    if (existingCodes) {
+      const existingCodesArray = Array.isArray(existingCodes) ? existingCodes : [existingCodes];
+      for (const codeStr of existingCodesArray) {
+        try {
+          const code = JSON.parse(codeStr);
+          if (code.code && code.code.trim()) {
+            await db.insert(post_code).values({ postId, code: code.code });
+          }
+        } catch (e) {
+          console.error('Error parsing existing code:', e);
+        }
+      }
+    }
+
+    // เพิ่มโค้ดใหม่
+    if (codesRaw) {
+      const codesArray = Array.isArray(codesRaw) ? codesRaw : [codesRaw];
+      for (const code of codesArray) {
+        if (code && code.trim()) {
+          await db.insert(post_code).values({ postId, code });
+        }
+      }
+    }
+
+    return c.json({ success: true, message: 'อัพเดทโพสต์เรียบร้อยแล้ว' });
+  } catch (error) {
+    console.error('Error updating post:', error);
+    return c.json({ error: 'เกิดข้อผิดพลาดในการอัพเดทโพสต์' }, 500);
+  }
+});
+
+postRoute.delete('/posts/:id', async (c) => {
+  try {
+    const postId = parseInt(c.req.param("id"));
+    const userId = Number(c.req.header("userId")); // get userId from request headers
+    if (!userId || Number.isNaN(userId)) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // ตรวจสอบว่าเป็นเจ้าของโพสต์หรือไม่
+    const ownerRecord = await db.query.posts.findFirst({
+      where: eq(posts.id, postId),
+      columns: { userId: true },
+    });
+
+    if (!ownerRecord) {
+      return c.json({ error: 'ไม่พบโพสต์' }, 404);
+    }
+
+    if (ownerRecord.userId !== userId) {
+      return c.json({ error: 'ไม่มีสิทธิ์ลบโพสต์นี้' }, 403);
+    }
+
+    // ลบข้อมูลที่เกี่ยวข้องทั้งหมด
+    await db.delete(post_picture).where(eq(post_picture.postId, postId));
+    await db.delete(post_code).where(eq(post_code.postId, postId));
+    await db.delete(comments).where(eq(comments.postId, postId));
+    await db.delete(posts).where(eq(posts.id, postId));
+
+    return c.json({ success: true, message: 'ลบโพสต์เรียบร้อยแล้ว' });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    return c.json({ error: 'เกิดข้อผิดพลาดในการลบโพสต์' }, 500);
+  }
+});
+
+postRoute.get('/posts/:id/owner', async (c) => {
+  try {
+    const postId = parseInt(c.req.param("id"));
+    const userCookie = getCookie(c, "user");
+    const user = userCookie ? JSON.parse(userCookie) : null;
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const userId = user.id;
+
+    const rows = await db.select({
+      userId: posts.userId,
+      username: users.username,
+    }).from(posts).leftJoin(users, eq(posts.userId, users.id)).where(eq(posts.id, postId));
+
+    if (!rows || rows.length === 0) {
+      return c.json({ error: 'ไม่พบโพสต์' }, 404);
+    }
+
+    const post = rows[0];
+
+    return c.json({
+      isOwner: post.userId === userId,
+      postUserId: post.userId,
+      postUsername: post.username
+    });
+  } catch (error) {
+    console.error('Error checking post owner:', error);
+    return c.json({ error: 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์' }, 500);
+  }
+});
+
 export { postRoute };
