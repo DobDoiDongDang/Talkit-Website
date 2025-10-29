@@ -31,3 +31,5 @@ lerna-debug.log*
 drizzle/
 
 dist/
+
+terraform/terraform.tfvars

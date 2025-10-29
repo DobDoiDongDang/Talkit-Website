@@ -90,8 +90,7 @@ authRoute.post("/login", async (c) => {
     // เก็บ AccessToken ใน Cookie (HTTP-only)
     setCookie(c, "token", accessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: "Lax",
+      secure: false,
       path: "/",
       maxAge: 60 * 60, // 1 hour
     });
@@ -104,7 +103,7 @@ authRoute.post("/login", async (c) => {
       userProfile: (dbUser as any).userProfile ?? null, // add profile to cookie
     });
     setCookie(c, "user", userInfo, {
-      httpOnly: false, secure: true, sameSite: "Lax", path: "/", maxAge: 60 * 60,
+      httpOnly: false, secure: false, path: "/", maxAge: 60 * 60,
     });
 
     return c.json({ success: true, redirect: "/", message: "เข้าสู่ระบบสำเร็จ" });

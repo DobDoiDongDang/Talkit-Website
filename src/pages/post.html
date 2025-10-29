@@ -67,8 +67,6 @@
       window.location.href = '/sand';
     });
 
-    fetchCategories();
-    // helper to read cookie (non httpOnly)
     function readCookie(name) {
       const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
       return v ? decodeURIComponent(v.pop()) : null;
@@ -164,12 +162,14 @@
     // ดึง postId จาก URL (เช่น /post.html?id=123)
     function getPostId() {
       const params = new URLSearchParams(window.location.search);
-      return params.get('id');
+      return parseInt(params.get('id')) || null;
     }
 
     // escape HTML
-    function escapeHtml(s) {
-      return String(s || '').replace(/[&<>"']/g, function (m) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]); });
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     async function fetchPostDetail(postId) {
@@ -178,12 +178,75 @@
       return await res.json();
     }
 
-    function renderPostDetail(data) {
+    // เพิ่มฟังก์ชัน fetchComments ที่หายไป
+    async function fetchComments(postId) {
+      try {
+        const res = await fetch(`/posts/${postId}/comments`, { credentials: 'include' });
+        return res.ok ? await res.json() : [];
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+        return [];
+      }
+    }
+
+    // แก้ไขฟังก์ชัน addLineNumbers ให้ถูกต้อง
+    function addLineNumbers(codeText) {
+      if (!codeText) return '1';
+      const lines = codeText.split('\n');
+      const maxDigits = lines.length.toString().length;
+      return lines.map((_, index) =>
+        (index + 1).toString().padStart(maxDigits, ' ')
+      ).join('\n');
+    }
+
+    // แก้ไข syntax highlighting ให้ไม่ทำลาย HTML structure
+    function highlightSyntax(code) {
+      if (!code) return '';
+
+      return code
+        // Escape HTML ก่อน
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        // ตัว highlighting
+        .replace(/\b(def|class|if|else|elif|for|while|import|from|return|try|except|finally|with|as|lambda|yield|global|nonlocal|assert|break|continue|pass|raise|del|and|or|not|in|is|True|False|None)\b/g, '<span class="syntax-keyword">$1</span>')
+        .replace(/(["'])((?:\\.|(?!\1)[^\\])*?)\1/g, '<span class="syntax-string">$1$2$1</span>')
+        .replace(/(#.*$)/gm, '<span class="syntax-comment">$1</span>')
+        .replace(/\b(\d+\.?\d*)\b/g, '<span class="syntax-number">$1</span>')
+        .replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g, '<span class="syntax-function">$1</span>');
+    }
+
+    // helper for safe base64 encoding/decoding
+    function b64EncodeUnicode(str) {
+      try {
+        return btoa(encodeURIComponent(str));
+      } catch (e) {
+        console.error('Base64 encode error:', e);
+        return btoa(str); // fallback
+      }
+    }
+
+    function b64DecodeUnicode(b64) {
+      try {
+        return decodeURIComponent(atob(b64));
+      } catch (e) {
+        console.error('Base64 decode error:', e);
+        try {
+          return atob(b64); // fallback
+        } catch (e2) {
+          console.error('Base64 fallback decode error:', e2);
+          return ''; // last resort
+        }
+      }
+    }
+
+    // แก้ไขฟังก์ชัน renderPostDetail ให้ใช้ JSON.stringify แทน base64
+    function renderPostDetail(data, comments) {
       if (!data) {
         document.getElementById('post-box').innerHTML = '<p>ไม่พบโพสต์นี้</p>';
         return;
       }
-      const { post, codes, pictures, comments } = data;
+      const { post, codes, pictures } = data;
       let html = `
         <div class="post-header">
           <div class="user-info">
@@ -197,22 +260,42 @@
 
       if (pictures && pictures.length) {
         html += `<div class="post-pictures">` +
-          pictures.map(pic => `<img src="${escapeHtml(pic.url || pic.data)}" class="post-img" alt="post image" />`).join('') +
+          pictures.map(pic => `
+            <img src="${escapeHtml(pic.url || pic.data)}" 
+                 class="post-img clickable-image" 
+                 alt="post image" 
+                 title="คลิกเพื่อขยาย" />
+          `).join('') +
           `</div>`;
       }
 
+      // เก็บ codes ใน global variable แทนการใส่ใน attribute
       if (codes && codes.length) {
-        codes.forEach(code => {
+        window.postCodes = codes; // เก็บไว้ใน global
+        codes.forEach((code, index) => {
+          const codeText = code.code || '';
+          const lineNumbers = addLineNumbers(codeText);
+          const highlightedCode = highlightSyntax(codeText);
+          const lineCount = codeText.split('\n').length;
+
           html += `
-          <div class="code-block">
-            <div class="code-header">${escapeHtml(code.language || 'Code')}</div>
-            <pre class="code-content">${escapeHtml(code.code)}</pre>
-            <pre class="code-footer"><span>Result:</span><button class="run-btn" id="run-btn">Run</button></pre>
+          <div class="code-block" data-code-index="${index}">
+            <div class="code-header">
+              <span>Python Code</span>
+              <span>${lineCount} lines</span>
+            </div>
+            <div class="code-content-wrapper">
+              <div class="line-numbers">${lineNumbers}</div>
+              <pre class="code-content">${highlightedCode}</pre>
+            </div>
+            <div class="code-footer">
+              <div class="code-output" style="display:none;"></div>
+              <button class="run-btn" onclick="runPostCode(${index})">Run Code</button>
+            </div>
           </div>`;
         });
       }
 
-      // เปลี่ยนจาก "..." เป็นฟอร์มคอมเมนต์จริง
       html += `
         <hr />
         <div class="comment-section">
@@ -231,7 +314,9 @@
         <div class="all-comments">
       `;
 
-      // แสดงคอมเมนต์
+      // เก็บ comment codes ใน global variable
+      window.commentCodes = {};
+
       if (comments && comments.length) {
         comments.forEach(comment => {
           html += `
@@ -241,27 +326,49 @@
               <h5>${escapeHtml(comment.username || 'Anon')}</h5>
               <p>${escapeHtml(comment.text)}</p>
           `;
-          // รูปในคอมเมนต์
+
           if (comment.pictures && comment.pictures.length) {
             html += `<div class="comment-pictures">` +
-              comment.pictures.map(pic => `<img src="${escapeHtml(pic.url || pic.data)}" class="comment-img" alt="comment image" />`).join('') +
+              comment.pictures.map(pic => `
+                <img src="${escapeHtml(pic.url || pic.data)}" 
+                     class="comment-img clickable-image" 
+                     alt="comment image" 
+                     title="คลิกเพื่อขยาย" />
+              `).join('') +
               `</div>`;
           }
-          // โค้ดในคอมเมนต์
+
           if (comment.codes && comment.codes.length) {
-            comment.codes.forEach(code => {
+            comment.codes.forEach((code, codeIndex) => {
+              const uniqueId = `comment-${comment.id}-code-${codeIndex}`;
+              const codeText = code.code || '';
+              const lineNumbers = addLineNumbers(codeText);
+              const highlightedCode = highlightSyntax(codeText);
+              const lineCount = codeText.split('\n').length;
+
+              // เก็บโค้ดใน global object
+              window.commentCodes[uniqueId] = codeText;
+
               html += `
-              <div class="code-block small-code">
-                <div class="code-header">${escapeHtml(code.language || 'Code')}</div>
-                <pre class="code-content">${escapeHtml(code.code)}</pre>
-                <pre class="code-footer"><span>Result:</span><button class="run-btn">Run</button></pre>
+              <div class="code-block small-code" data-comment-code-id="${uniqueId}">
+                <div class="code-header">
+                  <span>Python Code</span>
+                  <span>${lineCount} lines</span>
+                </div>
+                <div class="code-content-wrapper">
+                  <div class="line-numbers">${lineNumbers}</div>
+                  <pre class="code-content">${highlightedCode}</pre>
+                </div>
+                <div class="code-footer">
+                  <div class="code-output" style="display:none;"></div>
+                  <button class="run-btn" onclick="runCommentCode('${uniqueId}')">Run Code</button>
+                </div>
               </div>`;
             });
           }
           html += `
-            </div>
           </div>
-          `;
+        </div>`;
         });
       } else {
         html += `<p>ยังไม่มีความคิดเห็น</p>`;
@@ -269,26 +376,127 @@
       html += `</div>`;
 
       document.getElementById('post-box').innerHTML = html;
-
-      // เพิ่มปุ่ม ⋮ ให้โพสต์หลัก
-      const postHeader = document.querySelector('.post-header');
-      addOptionsButton(postHeader);
-
-      // เพิ่มปุ่ม ⋮ ให้ทุกคอมเมนต์
-      document.querySelectorAll('.single-comment').forEach(c => {
-        const header = c.querySelector('h5');
-        addOptionsButton(header, true);
-      });
-
-        // ติดตั้ง logic คอมเมนต์
-        setupCommentComposer(post.id);
-
-        // ติดตั้งตัวจัดการปุ่ม Run สำหรับโค้ดที่แสดง (ไม่รวม composer)
-        attachRunHandlers();
+      setupCommentComposer(post.id);
+      setupImagePreview(); // เรียกใช้หลังจากเติม HTML เสร็จ
     }
 
+    // แก้ไขฟังก์ชันรันโค้ด
+    window.runPostCode = async function (codeIndex) {
+      console.log('Running post code:', codeIndex);
+
+      if (!window.postCodes || !window.postCodes[codeIndex]) {
+        alert('ไม่พบโค้ดที่ต้องการรัน');
+        return;
+      }
+
+      const codeBlock = document.querySelector(`[data-code-index="${codeIndex}"]`);
+      if (!codeBlock) {
+        alert('ไม่พบ element โค้ด');
+        return;
+      }
+
+      const runBtn = codeBlock.querySelector('.run-btn');
+      const outputDiv = codeBlock.querySelector('.code-output');
+      const code = window.postCodes[codeIndex].code || '';
+
+      console.log('Code to run:', code);
+
+      runBtn.disabled = true;
+      runBtn.textContent = 'Running...';
+      outputDiv.style.display = 'block';
+      outputDiv.textContent = 'Executing code...';
+      outputDiv.className = 'code-output';
+
+      try {
+        const response = await fetch('/sand/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code.trim() }),
+          credentials: 'include'
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('Response result:', result);
+
+        outputDiv.textContent = result.result;
+        outputDiv.className = 'code-output success';
+      } catch (error) {
+        console.error('Run code error:', error);
+        outputDiv.textContent = `Network Error: ${error.message}`;
+        outputDiv.className = 'code-output error';
+      } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = 'Run Code';
+      }
+    };
+
+    // ลบฟังก์ชัน runCommentCode ที่ซ้ำและเก็บแค่อันเดียว
+    window.runCommentCode = async function (uniqueId) {
+      console.log('Running comment code:', uniqueId);
+
+      if (!window.commentCodes || !window.commentCodes[uniqueId]) {
+        alert('ไม่พบโค้ดที่ต้องการรัน');
+        return;
+      }
+
+      const codeBlock = document.querySelector(`[data-comment-code-id="${uniqueId}"]`);
+      if (!codeBlock) {
+        alert('ไม่พบ element โค้ด');
+        return;
+      }
+
+      const runBtn = codeBlock.querySelector('.run-btn');
+      const outputDiv = codeBlock.querySelector('.code-output');
+      const code = window.commentCodes[uniqueId];
+
+      console.log('Code to run:', code);
+
+      runBtn.disabled = true;
+      runBtn.textContent = 'Running...';
+      outputDiv.style.display = 'block';
+      outputDiv.textContent = 'Executing code...';
+      outputDiv.className = 'code-output';
+
+      try {
+        const response = await fetch('/sand/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code.trim() }),
+          credentials: 'include'
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('Response result:', result);
+
+        outputDiv.textContent = result.result;
+        outputDiv.className = 'code-output success';
+      } catch (error) {
+        console.error('Run comment code error:', error);
+        outputDiv.textContent = `Network Error: ${error.message}`;
+        outputDiv.className = 'code-output error';
+      } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = 'Run Code';
+      }
+    };
+
+    // แก้ไขฟังก์ชัน setupCommentComposer
     function setupCommentComposer(postId) {
       const section = document.querySelector('.comment-section');
+      if (!section) return;
+
       const imgBtn = section.querySelector('.img-btn');
       const codeBtn = section.querySelector('.code-btn');
       const submitBtn = section.querySelector('.submit-comment');
@@ -296,103 +504,139 @@
       const preview = section.querySelector('#comment-image-preview');
       const codeList = section.querySelector('#comment-code-list');
 
-      let files = [];      // File[]
-      let codes = [];      // string[]
+      let files = [];
+      let codes = [];
 
-      imgBtn.onclick = () => imgInput.click();
-      imgInput.onchange = () => {
-        const selected = Array.from(imgInput.files || []);
-        files.push(...selected);
-        imgInput.value = '';
-        renderPreviews();
-      };
+      if (imgBtn) {
+        imgBtn.onclick = () => imgInput && imgInput.click();
+      }
 
-      // เปลี่ยน UI "เพิ่มโค้ด" ให้หน้าตาเหมือน create_post
-      codeBtn.onclick = () => {
-        const wrap = document.createElement('div');
-        wrap.className = 'code-block';
+      if (imgInput) {
+        imgInput.onchange = () => {
+          const selected = Array.from(imgInput.files || []);
+          files.push(...selected);
+          imgInput.value = '';
+          renderPreviews();
+        };
+      }
 
-        wrap.innerHTML = `
-          <button class="close-btn" type="button">&times;</button>
-          <div class="code-header">Python</div>
-          <textarea class="code-content" placeholder="เขียนโค้ดของคุณที่นี่..."></textarea>
-          <div class="code-footer">
-            <span></span>
-            <button class="run-btn" type="button">Run</button>
-          </div>
-        `;
+      if (codeBtn) {
+        codeBtn.onclick = () => {
+          const wrap = document.createElement('div');
+          wrap.className = 'code-block';
+          const uniqueCommentId = `new-comment-code-${Date.now()}`;
+          wrap.setAttribute('data-new-comment-code-id', uniqueCommentId);
 
-        const ta = wrap.querySelector('.code-content');
-        const closeBtn = wrap.querySelector('.close-btn');
-        const runBtn = wrap.querySelector('.run-btn');
+          wrap.innerHTML = `
+            <button class="close-btn" type="button">&times;</button>
+            <div class="code-header">
+              <span>Python Code</span>
+              <span>New</span>
+            </div>
+            <div class="code-content-wrapper">
+              <div class="code-content-container">
+                <div class="line-numbers">1</div>
+                <textarea class="code-content comment-textarea" placeholder="# เขียนโค้ด Python ของคุณที่นี่...\nprint('Hello, World!')" rows="4"></textarea>
+              </div>
+            </div>
+            <div class="code-footer">
+              <div class="code-output" style="display:none;"></div>
+              <button class="run-btn" type="button">Run Code</button>
+            </div>
+          `;
 
-        // จองที่ในอาร์เรย์ไว้ก่อน
-        codes.push('');
-        const syncIndex = () => Array.from(codeList.children).indexOf(wrap);
+          const ta = wrap.querySelector('.code-content');
+          const closeBtn = wrap.querySelector('.close-btn');
+          const runBtn = wrap.querySelector('.run-btn');
+          const outputDiv = wrap.querySelector('.code-output');
+          const lineNumbersDiv = wrap.querySelector('.line-numbers');
 
-        ta.addEventListener('input', () => {
-          const idx = syncIndex();
-          if (idx > -1) codes[idx] = ta.value;
-        });
+          codes.push('');
+          const syncIndex = () => Array.from(codeList.children).indexOf(wrap);
 
-        closeBtn.addEventListener('click', () => {
-          const idx = syncIndex();
-          if (idx > -1) codes.splice(idx, 1);
-          wrap.remove();
-        });
+          function updateLineNumbers() {
+            const text = ta.value || '';
+            const lines = text.split('\n');
+            const lineCount = lines.length;
+            const maxDigits = lineCount.toString().length;
 
-        // ปุ่ม Run ใน composer: เรียกใช้งาน sandbox endpoint เหมือน run-btn ตัวอื่น
-        runBtn.addEventListener('click', async () => {
-          const origText = runBtn.textContent;
-          runBtn.disabled = true;
-          runBtn.textContent = 'Running...';
+            // สร้างเลขบรรทัดโดยจำกัดความกว้าง
+            const lineNumbers = Array.from({ length: lineCount }, (_, i) =>
+              (i + 1).toString().padStart(Math.max(2, maxDigits), ' ')
+            ).join('\n');
 
-          // หา element ผลลัพธ์ภายใน footer (หรือสร้างใหม่ถ้าไม่มี)
-          const footerEl = wrap.querySelector('.code-footer') || runBtn.parentElement;
-          let resEl = footerEl.querySelector('.code-result');
-          if (!resEl) {
-            resEl = document.createElement('div');
-            resEl.className = 'code-result';
-            resEl.style.whiteSpace = 'pre-wrap';
-            resEl.style.marginTop = '8px';
-            footerEl.insertBefore(resEl, runBtn);
+            lineNumbersDiv.textContent = lineNumbers;
+
+            // ปรับความสูงของ textarea ให้ตรงกับเนื้อหา
+            ta.style.height = 'auto';
+            ta.style.height = Math.max(80, ta.scrollHeight) + 'px';
           }
 
-          resEl.textContent = 'กำลังประมวลผล...';
+          ta.addEventListener('input', () => {
+            const idx = syncIndex();
+            if (idx > -1) codes[idx] = ta.value;
+            updateLineNumbers();
+          });
 
-          try {
-            const code = ta.value || '';
-            const res = await fetch('/sand/run', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code })
-            });
+          ta.addEventListener('scroll', () => {
+            // ซิงค์การ scroll ระหว่าง line numbers และ content
+            lineNumbersDiv.scrollTop = ta.scrollTop;
+          });
 
-            if (!res.ok) {
-              const txt = await res.text().catch(() => res.statusText);
-              resEl.textContent = `ข้อผิดพลาด: ${txt}`;
-            } else {
-              const data = await res.json().catch(() => ({}));
-              resEl.textContent = data.result || 'ไม่มีผลลัพธ์';
+          closeBtn.addEventListener('click', () => {
+            const idx = syncIndex();
+            if (idx > -1) codes.splice(idx, 1);
+            wrap.remove();
+          });
+
+          runBtn.addEventListener('click', async () => {
+            const code = ta.value.trim();
+            if (!code) {
+              alert('กรุณาเขียนโค้ดก่อนรัน');
+              return;
             }
-          } catch (err) {
-            resEl.textContent = `เกิดข้อผิดพลาด: ${err && err.message ? err.message : err}`;
-          }
 
-          runBtn.disabled = false;
-          runBtn.textContent = origText;
-        });
+            runBtn.disabled = true;
+            runBtn.textContent = 'Running...';
+            outputDiv.style.display = 'block';
+            outputDiv.textContent = 'Executing code...';
+            outputDiv.className = 'code-output';
 
-        codeList.appendChild(wrap);
-        ta.focus();
-      };
+            try {
+              const response = await fetch('/sand/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code }),
+                credentials: 'include'
+              });
+
+              const result = await response.json();
+              outputDiv.textContent = result.result;
+              outputDiv.className = 'code-output success';
+            } catch (error) {
+              outputDiv.textContent = `Network Error: ${error.message}`;
+              outputDiv.className = 'code-output error';
+            } finally {
+              runBtn.disabled = false;
+              runBtn.textContent = 'Run Code';
+            }
+          });
+
+          codeList.appendChild(wrap);
+          ta.focus();
+          updateLineNumbers();
+        };
+      }
 
       function renderPreviews() {
+        if (!preview) return;
         preview.innerHTML = '';
         files.forEach((f, idx) => {
           const url = URL.createObjectURL(f);
           const box = document.createElement('div');
           box.style.position = 'relative';
+          box.style.display = 'inline-block';
+          
           const img = document.createElement('img');
           img.src = url;
           img.style.maxWidth = '120px';
@@ -400,127 +644,136 @@
           img.style.objectFit = 'cover';
           img.style.border = '1px solid #ddd';
           img.style.borderRadius = '8px';
+          img.style.cursor = 'pointer';
+          img.title = 'คลิกเพื่อขยาย';
+          
+          // เพิ่ม event สำหรับขยายรูปพรีวิว
+          img.addEventListener('click', () => {
+            const overlay = document.getElementById('imagePreviewOverlay');
+            const previewImg = document.getElementById('previewedImage');
+            previewImg.src = url;
+            overlay.style.display = 'flex';
+          });
+          
           const del = document.createElement('button');
           del.textContent = '×';
           del.style.position = 'absolute';
           del.style.top = '2px';
           del.style.right = '2px';
-          del.onclick = () => { files.splice(idx, 1); renderPreviews(); };
+          del.style.background = '#ff4d4d';
+          del.style.color = '#fff';
+          del.style.border = 'none';
+          del.style.borderRadius = '50%';
+          del.style.width = '20px';
+          del.style.height = '20px';
+          del.style.cursor = 'pointer';
+          del.style.fontSize = '12px';
+          del.style.display = 'flex';
+          del.style.alignItems = 'center';
+          del.style.justifyContent = 'center';
+          del.onclick = (e) => { 
+            e.stopPropagation(); 
+            URL.revokeObjectURL(url); // ล้าง memory
+            files.splice(idx, 1); 
+            renderPreviews(); 
+          };
+          
           box.appendChild(img);
           box.appendChild(del);
           preview.appendChild(box);
         });
       }
 
-      submitBtn.onclick = async () => {
-        const text = section.querySelector('.comment-input').value.trim();
-        const fd = new FormData();
-        fd.append('postId', String(postId));
-        fd.append('text', text);
-        codes.filter(Boolean).forEach(code => fd.append('codes[]', code));
-        files.forEach(f => fd.append('images[]', f));
+      if (submitBtn) {
+        submitBtn.onclick = async () => {
+          const textArea = section.querySelector('.comment-input');
+          const text = textArea ? textArea.value.trim() : '';
 
-        const res = await fetch('/posts/comments', {
-          method: 'POST',
-          body: fd,
-          credentials: 'include'
-        });
-        if (!res.ok) {
-          const e = await res.json().catch(() => ({}));
-          alert(e.error || 'เพิ่มความคิดเห็นไม่สำเร็จ');
-          return;
-        }
-        // reload post detail
-        const data = await fetch(`/posts/${postId}`, { credentials: 'include' }).then(r => r.json()).catch(() => null);
-        if (data) renderPostDetail(data);
-      };
-    }
-
-    // ดึงข้อมูลโพสต์เมื่อโหลดหน้า
-    (async () => {
-      const postId = getPostId();
-      if (!postId) return alert('ไม่พบโพสต์ที่ต้องการดูรายละเอียด');
-      const data = await fetchPostDetail(postId);
-      renderPostDetail(data);
-      setupImagePreview();
-    })();
-
-    // attach run handlers to displayed code blocks (post/comment bodies)
-    function attachRunHandlers() {
-      const blocks = document.querySelectorAll('#post-box .code-block');
-      blocks.forEach(block => {
-        // skip composer blocks inside comment composer
-        if (block.closest('.comment-section')) return;
-        const runBtn = block.querySelector('.run-btn');
-        if (!runBtn) return;
-        if (runBtn.dataset.attached) return; // prevent double attach
-        runBtn.dataset.attached = '1';
-
-        runBtn.addEventListener('click', async () => {
-          // find code content (pre.code-content)
-          const contentEl = block.querySelector('.code-content');
-          const code = contentEl ? contentEl.textContent : '';
-          const footer = block.querySelector('.code-footer');
-          if (!footer) return;
-
-          const origText = runBtn.textContent;
-          runBtn.disabled = true;
-          runBtn.textContent = 'Running...';
-
-          // ensure a result element exists
-          let resEl = footer.querySelector('.code-result');
-          if (!resEl) {
-            resEl = document.createElement('div');
-            resEl.className = 'code-result';
-            resEl.style.whiteSpace = 'pre-wrap';
-            resEl.style.marginTop = '8px';
-            footer.insertBefore(resEl, runBtn);
+          if (!text && codes.filter(Boolean).length === 0 && files.length === 0) {
+            alert('กรุณาใส่เนื้อหาความคิดเห็น');
+            return;
           }
 
-          resEl.textContent = 'กำลังประมวลผล...';
+          const fd = new FormData();
+          fd.append('postId', String(postId));
+          fd.append('text', text);
+          codes.filter(Boolean).forEach(code => fd.append('codes[]', code));
+          files.forEach(f => fd.append('images[]', f));
 
           try {
-            const res = await fetch('/sand/run', {
+            const res = await fetch('/posts/comments', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code })
+              body: fd,
+              credentials: 'include'
             });
 
             if (!res.ok) {
-              const txt = await res.text().catch(() => res.statusText);
-              resEl.textContent = `ข้อผิดพลาด: ${txt}`;
-            } else {
-              const data = await res.json().catch(() => ({}));
-              resEl.textContent = data.result || 'ไม่มีผลลัพธ์';
+              const e = await res.json().catch(() => ({}));
+              alert(e.error || 'เพิ่มความคิดเห็นไม่สำเร็จ');
+              return;
             }
-          } catch (err) {
-            resEl.textContent = `เกิดข้อผิดพลาด: ${err.message}`;
-          }
 
-          runBtn.disabled = false;
-          runBtn.textContent = origText;
-        });
-      });
+            // เคลียร์ฟอร์มและโหลดข้อมูลใหม่
+            if (textArea) textArea.value = '';
+            files = [];
+            codes = [];
+            renderPreviews();
+            codeList.innerHTML = '';
+
+            const [data, cmts] = await Promise.all([fetchPostDetail(postId), fetchComments(postId)]);
+            currentPostData = data;
+            renderPostDetail(data, cmts);
+
+          } catch (error) {
+            alert('เกิดข้อผิดพลาดในการส่งความคิดเห็น');
+            console.error('Comment submission error:', error);
+          }
+        };
+      }
     }
 
+    // ฟังก์ชันขยายรูป - แก้ไขให้มีปุ่มปิดที่ใช้งานได้
     function setupImagePreview() {
       const overlay = document.getElementById('imagePreviewOverlay');
       const previewImg = document.getElementById('previewedImage');
 
-      // เลือกรูปทั้งหมดในโพสต์และคอมเมนต์
-      const allImgs = document.querySelectorAll('.post-img, .comment-img');
-      allImgs.forEach(img => {
-        img.addEventListener('click', () => {
-          previewImg.src = img.src;
+      // เพิ่ม event listener ให้รูปทั้งหมดในโพสต์และคอมเมนต์
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('post-img') || 
+            e.target.classList.contains('comment-img')) {
+          e.preventDefault();
+          previewImg.src = e.target.src;
           overlay.style.display = 'flex';
-        });
+        }
       });
 
-      // ปิดเมื่อคลิกพื้นหลัง
+      // ปิดรูปขยายเมื่อคลิกที่พื้นหลัง
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
           overlay.style.display = 'none';
-          previewImg.src = '';
+        }
+      });
+
+      // เพิ่ม event listener สำหรับปุ่มปิด (ที่มี CSS ::after)
+      const imageContent = overlay.querySelector('.image-preview-content');
+      if (imageContent) {
+        imageContent.addEventListener('click', (e) => {
+          // ตรวจสอบว่าคลิกที่ปุ่มปิด (บริเวณมุมขวาบน)
+          const rect = imageContent.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          
+          // ถ้าคลิกใกล้มุมขวาบน (บริเวณที่มีปุ่ม X)
+          if (x > rect.width - 60 && y < 60) {
+            overlay.style.display = 'none';
+          }
+        });
+      }
+
+      // ปิดรูปขยายเมื่อกด ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.style.display === 'flex') {
+          overlay.style.display = 'none';
         }
       });
     }
@@ -617,7 +870,28 @@
   }
 
 
+    // โหลดข้อมูลจริง
+    (async () => {
+      hydrateSidebarProfile();
+      fetchCategories();
+      const postId = getPostId();
+      if (!postId) {
+        document.getElementById('post-box').innerHTML = '<p>ไม่พบโพสต์นี้</p>';
+        return;
+      }
+      const [data, cmts] = await Promise.all([fetchPostDetail(postId), fetchComments(postId)]);
+      currentPostData = data;
+      renderPostDetail(data, cmts);
+    })();
 
+    // แก้ไขฟังก์ชันแก้ไขโพสต์
+    window.editPost = function(postId) {
+        // ปิดเมนู
+        document.getElementById(`post-menu-${postId}`).style.display = 'none';
+        
+        // ไปหน้าแก้ไขโพสต์
+        window.location.href = `/edit_post?id=${postId}`;
+    };
   </script>
 </body>
 

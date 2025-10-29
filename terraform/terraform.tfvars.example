@@ -1,0 +1,8 @@
+db_username  = "your_db_admin_user"
+db_password  = "your_super_secret_password"
+environment  = "dev"
+my_ip        = "YOUR_IP_HERE/32"
+ec2_key_name = "your-aws-key-pair-name"
+aws_access_key    = "ASIA..."
+aws_secret_key    = "..."
+aws_session_token = "..."

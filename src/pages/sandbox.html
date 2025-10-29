@@ -190,27 +190,62 @@ print("X =", x)
             textarea.style.height = textarea.scrollHeight + 'px';
         });
 
-        // Run button logic
+        // แก้ไข Run button logic ให้เหมือนกับหน้า post
         const runBtn = document.getElementById('run-btn');
         const resultBox = document.getElementById('result-box');
+
         runBtn.addEventListener('click', async () => {
-            const code = textarea.value;
-            resultBox.textContent = 'กำลังประมวลผล...';
+            const code = textarea.value.trim();
+            if (!code) {
+                alert('กรุณาเขียนโค้ดก่อนรัน');
+                return;
+            }
+
+            // แสดงสถานะกำลังรัน
+            runBtn.disabled = true;
+            runBtn.textContent = 'Running...';
+            resultBox.textContent = 'Executing code...';
+            resultBox.className = 'result-box'; // รีเซ็ต class
 
             try {
-                const res = await fetch('/sand/run', {
+                const response = await fetch('/sand/run', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code })
+                    body: JSON.stringify({ code: code.trim() }),
+                    credentials: 'include'
                 });
 
-                if (!res.ok) throw new Error(`ข้อผิดพลาด: ${res.statusText}`);
+                console.log('Response status:', response.status);
 
-                const data = await res.json();
-                console.log(data);
-                resultBox.textContent = data.result || 'ไม่มีผลลัพธ์';
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('Response result:', result);
+
+                // ใช้ response structure เดียวกันกับหน้า post
+                if (result.success !== undefined) {
+                    // Structure แบบใหม่ที่มี success flag
+                    if (result.success) {
+                        resultBox.textContent = result.output || 'Code executed successfully (no output)';
+                        resultBox.className = 'result-box success';
+                    } else {
+                        resultBox.textContent = result.error || 'Unknown error occurred';
+                        resultBox.className = 'result-box error';
+                    }
+                } else {
+                    // Structure แบบเก่าที่ส่ง result โดยตรง
+                    resultBox.textContent = result.result || result.output || 'Code executed successfully (no output)';
+                    resultBox.className = 'result-box success';
+                }
             } catch (error) {
-                resultBox.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
+                console.error('Run code error:', error);
+                resultBox.textContent = `Network Error: ${error.message}`;
+                resultBox.className = 'result-box error';
+            } finally {
+                runBtn.disabled = false;
+                runBtn.textContent = 'Run';
             }
         });
     </script>
