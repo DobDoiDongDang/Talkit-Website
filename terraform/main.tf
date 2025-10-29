@@ -25,26 +25,21 @@ data "aws_region" "current" {}
 # NETWORKING (VPC, SUBNETS, ROUTING)
 # -----------------------------------------------------------------
 
-# VPC Configuration
+# (ส่วน VPC, Subnets, IGW, NAT, Route Tables... ไม่เปลี่ยนแปลง)
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
-
   tags = {
     Name = "talkit-vpc"
   }
 }
-
-# Internet Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
   tags = {
     Name = "talkit-igw"
   }
 }
-
-# --- Public Subnets (for ALB and NAT Gateway) ---
 resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
@@ -63,8 +58,6 @@ resource "aws_subnet" "public_2" {
     Name = "talkit-public-2"
   }
 }
-
-# --- Private Subnets (for EC2 and RDS) ---
 resource "aws_subnet" "private_1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.3.0/24"
@@ -83,8 +76,6 @@ resource "aws_subnet" "private_2" {
     Name = "talkit-private-2"
   }
 }
-
-# --- NAT Gateway ---
 resource "aws_eip" "nat" {
   domain = "vpc"
 }
@@ -96,8 +87,6 @@ resource "aws_nat_gateway" "main" {
   }
   depends_on = [aws_internet_gateway.main]
 }
-
-# --- Route Tables ---
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
   route {
@@ -135,9 +124,8 @@ resource "aws_route_table_association" "private_2" {
   route_table_id = aws_route_table.private.id
 }
 
-
 # -----------------------------------------------------------------
-# SECURITY GROUPS
+# SECURITY GROUPS (ไม่เปลี่ยนแปลง)
 # -----------------------------------------------------------------
 
 resource "aws_security_group" "alb" {
@@ -166,7 +154,7 @@ resource "aws_security_group" "ec2" {
   description = "Allow traffic from ALB, SSH, and internal services"
   vpc_id      = aws_vpc.main.id
 
-  # Allow Port 8080 from ALB (for Node.js app)
+  # Ingress for Node.js App (Port 8080 from ALB)
   ingress {
     from_port       = 8080
     to_port         = 8080
@@ -174,7 +162,7 @@ resource "aws_security_group" "ec2" {
     security_groups = [aws_security_group.alb.id]
   }
 
-  # Allow Port 8000 from within the same security group (Node.js -> Python)
+  # Ingress for Python Service (Port 8000 internal)
   ingress {
     from_port       = 8000
     to_port         = 8000
@@ -182,12 +170,20 @@ resource "aws_security_group" "ec2" {
     self            = true
   }
 
-  # Allow SSH from your IP
+  # Ingress for SSH (Port 22 from your IP)
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.my_ip]
+    cidr_blocks = [var.my_ip] # (ถ้า Debug ให้ใช้ "0.0.0.0/0" ชั่วคราว)
+  }
+
+  # Ingress for Ping (ICMP)
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -243,11 +239,14 @@ resource "aws_lb_target_group" "main" {
   port     = 8080 # Point to Node.js port 8080
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
-
   health_check {
     path = "/"
   }
-
+  stickiness {
+    type            = "lb_cookie" # Use Load Balancer generated cookie
+    cookie_duration = 3600        # Stickiness duration in seconds (1 hour)
+    enabled         = true
+  }
   tags = {
     Name = "talkit-tg"
   }
@@ -257,7 +256,6 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
-
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.main.arn
@@ -268,40 +266,32 @@ resource "aws_lb_listener" "http" {
 # EC2 INSTANCE
 # -----------------------------------------------------------------
 
-data "aws_ami" "amazon_linux" {
-  most_recent = true
-  owners      = ["amazon"]
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
-  }
-}
-
-# --- IAM Role removed (per lab restrictions) ---
-
 # --- Single EC2 Instance ---
 resource "aws_instance" "main" {
-  ami           = data.aws_ami.amazon_linux.id
+  # Use your Golden AMI ID
+  ami           = "ami-093506617ced6604a"
+
   instance_type = "t2.micro"
-  subnet_id     = aws_subnet.private_1.id
+
+  # (ตั้งค่าสำหรับ Debug - Public Subnet + Public IP)
+  subnet_id                   = aws_subnet.public_1.id
+  associate_public_ip_address = true
 
   vpc_security_group_ids = [aws_security_group.ec2.id]
-  # iam_instance_profile removed
-  key_name = var.ec2_key_name
+  key_name               = var.ec2_key_name
 
+  # The user_data script is now *much* smaller
   user_data = base64encode(templatefile("user_data.sh.tpl", {
     db_user                = var.db_username
     db_pass                = var.db_password
     db_host                = aws_db_instance.talkit_db.endpoint
     db_port                = aws_db_instance.talkit_db.port
     db_name                = aws_db_instance.talkit_db.db_name
-    
     aws_region             = data.aws_region.current.name
-    cognito_client_id      = aws_cognito_user_pool_client.client.id
+    cognito_client_id      = aws_cognito_user_pool_client.client.id # Fixed reference
     cognito_user_pool_id   = aws_cognito_user_pool.main.id
     aws_s3_bucket          = aws_s3_bucket.profile_uploads.bucket
     cognito_jwks_url       = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${aws_cognito_user_pool.main.id}/.well-known/jwks.json"
-    
     aws_access_key    = var.aws_access_key
     aws_secret_key    = var.aws_secret_key
     aws_session_token = var.aws_session_token
@@ -332,16 +322,16 @@ resource "aws_db_subnet_group" "default" {
 }
 
 resource "aws_db_instance" "talkit_db" {
-  identifier           = "talkit-db"
+  identifier           = "talkit-database-v2"
+
   engine               = "postgres"
-  engine_version       = "15" # Fixed version
+  engine_version       = "15"
   instance_class       = "db.t3.micro"
   allocated_storage    = 20
   storage_type         = "gp2"
-
-  db_name  = "TalkitDB"
-  username = var.db_username
-  password = var.db_password
+  db_name              = "postgres"
+  username             = var.db_username
+  password             = var.db_password
 
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.default.name
@@ -360,11 +350,12 @@ resource "aws_db_instance" "talkit_db" {
 }
 
 # -----------------------------------------------------------------
-# COGNITO
+# COGNITO (แก้ไข)
 # -----------------------------------------------------------------
 
 resource "aws_cognito_user_pool" "main" {
   name = "talkit-user-pool"
+
   password_policy {
     minimum_length    = 8
     require_lowercase = true
@@ -372,7 +363,9 @@ resource "aws_cognito_user_pool" "main" {
     require_symbols   = true
     require_uppercase = true
   }
-  username_attributes      = ["email"]
+
+  # REMOVED: username_attributes = ["username"] (Invalid & Defaults to username anyway)
+
   auto_verified_attributes = ["email"]
   account_recovery_setting {
     recovery_mechanism {
@@ -380,46 +373,62 @@ resource "aws_cognito_user_pool" "main" {
       priority = 1
     }
   }
-  schema {
-    attribute_data_type = "String"
-    name                = "email"
-    required            = true
-    mutable             = true
-    string_attribute_constraints {
-      min_length = 7
-      max_length = 256
-    }
-  }
+
+  # REMOVED: Explicit custom 'email' schema block (managed by Cognito)
+
+  # Keep the 'name' attribute
   schema {
     attribute_data_type = "String"
     name                = "name"
-    required            = true
     mutable             = true
     string_attribute_constraints {
       min_length = 1
       max_length = 256
     }
   }
+
+  # Added standard email attribute definition
+  schema {
+    attribute_data_type      = "String"
+    developer_only_attribute = false
+    mutable                  = true
+    name                     = "email"
+    required                 = true # Still require email for verification/recovery
+    string_attribute_constraints {
+      min_length = 7
+      max_length = 256
+    }
+  }
 }
 
+# --- V V V V V ADDED THIS BLOCK V V V V V ---
+# Add the missing User Pool Client resource
 resource "aws_cognito_user_pool_client" "client" {
-  name = "talkit-client"
+  name = "talkit-client" # This name matches the output.tf reference
+
   user_pool_id = aws_cognito_user_pool.main.id
+
+  # Common settings, adjust if needed
   explicit_auth_flows = [
     "ALLOW_USER_PASSWORD_AUTH",
     "ALLOW_REFRESH_TOKEN_AUTH"
   ]
   prevent_user_existence_errors = "ENABLED"
-  access_token_validity         = 1
-  refresh_token_validity        = 30
+  access_token_validity         = 1     # e.g., 1 hour
+  refresh_token_validity        = 30    # e.g., 30 days
+  id_token_validity             = 1     # e.g., 1 hour
+
   token_validity_units {
-    access_token  = "days"
+    access_token  = "hours" # Or days
     refresh_token = "days"
+    id_token      = "hours" # Or days
   }
 }
+# --- ^ ^ ^ ^ ^ ADDED THIS BLOCK ^ ^ ^ ^ ^ ---
+
 
 # -----------------------------------------------------------------
-# S3 BUCKET (UPDATED)
+# S3 BUCKET
 # -----------------------------------------------------------------
 
 resource "random_id" "suffix" {
@@ -467,8 +476,7 @@ resource "aws_s3_bucket_policy" "profile_uploads_public_read" {
       }
     ]
   })
-  
-  # Added depends_on to fix 403 error
+
   depends_on = [aws_s3_bucket_public_access_block.profile_uploads]
 }
 
