@@ -560,23 +560,62 @@
       targetElement.appendChild(wrapper);
     }
 
-    // popup รายงาน
-    function openReportPopup(type) {
-      const overlay = document.getElementById('report-overlay');
-      const cancelBtn = document.getElementById('report-cancel');
-      const submitBtn = document.getElementById('report-submit');
-      const reason = document.getElementById('report-reason');
+  async function openReportPopup(type) {
+    const overlay = document.getElementById('report-overlay');
+    const cancelBtn = document.getElementById('report-cancel');
+    const submitBtn = document.getElementById('report-submit');
+    const reason = document.getElementById('report-reason');
 
-      overlay.style.display = 'flex';
-      reason.value = '';
+    // ดึง ID จากระบบ (แล้วแต่คุณจะใช้ post หรือ comment)
+    const targetId = getPostId(); // สมมติใช้ฟังก์ชันนี้ดึง ID
+    overlay.style.display = 'flex';
 
-      cancelBtn.onclick = () => (overlay.style.display = 'none');
-      submitBtn.onclick = () => {
-        if (!reason.value.trim()) return alert('กรุณากรอกเหตุผล');
-        alert(`รายงาน${type} ส่งแล้ว: ${reason.value}`);
+    cancelBtn.onclick = () => (overlay.style.display = 'none');
+
+    submitBtn.onclick = async () => {
+      const description = reason.value.trim();
+      if (!description) return alert('กรุณากรอกเหตุผล');
+
+      // ตัดสินใจเลือก endpoint ตาม type
+      let url = '';
+      if (type === 'post') {
+        url = `/reports/post/${targetId}`;
+      } else if (type === 'comment') {
+        url = `/reports/comment/${targetId}`;
+      } else {
+        alert('ประเภทการรายงานไม่ถูกต้อง');
+        return;
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            [type === 'post' ? 'postId' : 'commentId']: targetId,
+            description 
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.error || 'ไม่สามารถส่งรายงานได้');
+          return;
+        }
+
+        alert(result.message || 'รายงานถูกส่งเรียบร้อยแล้ว');
         overlay.style.display = 'none';
-      };
-    }
+        reason.value = ''; // เคลียร์ข้อความ
+      } catch (err) {
+        console.error('Report request error:', err);
+        alert('เกิดข้อผิดพลาดในการส่งรายงาน');
+      }
+    };
+  }
+
 
 
   </script>

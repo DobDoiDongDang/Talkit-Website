@@ -9,6 +9,7 @@ import { sandRoute } from "./routes/sand.js";
 import { getCookie } from "hono/cookie";
 import { commentRoute } from "./routes/comment.js";
 import { profilesRoute } from "./routes/profiles.js";
+import { reportsRoute } from "./routes/report.js";
 
 import 'dotenv/config';
 
@@ -31,6 +32,7 @@ app.route("sand", sandRoute);
 app.route("posts", postRoute);
 app.route("posts", commentRoute); // เพิ่มให้รองรับ /posts/comments และ /posts/:postId/comments
 app.route("profiles", profilesRoute);
+app.route("reports", reportsRoute)
 app.get("/logout", (c) => {
   // ลบ cookie token โดยตั้ง Max-Age=0
   c.header("Set-Cookie", "token=; HttpOnly; Path=/; Max-Age=0; Secure");
