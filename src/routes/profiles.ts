@@ -48,12 +48,12 @@ profilesRoute.get('/me', async (c) => {
 
   const row = await db.query.users.findFirst({ where: eq(users.id, u.id) });
   if (!row) return c.json({ error: 'User not found' }, 404);
-
+  console.log('Fetched user profile:', row.userProfile);
   return c.json({
     id: row.id,
     username: row.username,
     email: row.email,
-    userProfile: (row as any).userProfile ?? null,
+    userProfile: row.userProfile ?? null,
   });
 });
 
