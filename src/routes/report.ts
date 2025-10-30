@@ -88,9 +88,36 @@ reportsRoute.delete('/user/:userId', async (c) => {
 
     await client.send(command);
 
+    // อัปเดตข้อมูลในฐานข้อมูล
+    // อัปเดตชื่อผู้ใช้และสถานะ
+    await db
+      .update(users)
+      .set({
+        username: 'ผู้ใช้ถูกระงับ',
+        status: 'suspended'
+      })
+      .where(eq(users.id, userId));
+    
+    // อัปเดตข้อความในโพสต์
+    await db
+      .update(posts)
+      .set({
+        title: 'ข้อความถูกลบทั้งหมด',
+        text: 'ข้อความถูกลบทั้งหมด'
+      })
+      .where(eq(posts.userId, userId));
+
+    // อัปเดตข้อความในคอมเมนต์
+    await db
+      .update(comments)
+      .set({
+        text: 'ข้อความถูกลบทั้งหมด'
+      })
+      .where(eq(comments.userId, userId));
+
     return c.json({ 
       success: true, 
-      message: `ปิดการใช้งานบัญชีผู้ใช้ ${user[0].username} เรียบร้อยแล้ว` 
+      message: `ปิดการใช้งานบัญชีผู้ใช้และลบข้อมูลเรียบร้อยแล้ว` 
     });
   } catch (err: any) {
     console.error('Disable user error:', err);
@@ -215,11 +242,6 @@ reportsRoute.put('/:reportId/status', async (c) => {
     console.error('Update report status error:', err);
     return c.json({ error: 'Failed to update report', details: err?.message }, 500);
   }
-});
-
-//hard ban
-reportsRoute.delete('/hardban/:userId', async (c) => {
-
 });
 
 async function loadPage(filename: string) {
