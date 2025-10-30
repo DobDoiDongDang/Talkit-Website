@@ -326,6 +326,7 @@
             <div class="comment-content">
               <h5>${escapeHtml(comment.username || 'Anon')}</h5>
               <p>${escapeHtml(comment.text)}</p>
+              <button onclick='openReportPopup("comment", ${comment.id})'>รายงาน</button>
           `;
 
           if (comment.pictures && comment.pictures.length) {
@@ -814,14 +815,14 @@
       targetElement.appendChild(wrapper);
     }
 
-  async function openReportPopup(type) {
+  async function openReportPopup(type, id=null) {
     const overlay = document.getElementById('report-overlay');
     const cancelBtn = document.getElementById('report-cancel');
     const submitBtn = document.getElementById('report-submit');
     const reason = document.getElementById('report-reason');
 
     // ดึง ID จากระบบ (แล้วแต่คุณจะใช้ post หรือ comment)
-    const targetId = getPostId(); // สมมติใช้ฟังก์ชันนี้ดึง ID
+    const targetId = type == "post" ? getPostId() : id; // สมมติใช้ฟังก์ชันนี้ดึง ID
     overlay.style.display = 'flex';
 
     cancelBtn.onclick = () => (overlay.style.display = 'none');
