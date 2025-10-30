@@ -5,16 +5,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>การรายงาน</title>
-</head>
-<!DOCTYPE html>
-<html lang="th">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>โปรไฟล์ผู้ใช้</title>
   <link rel="stylesheet" href="homepage.css">
-  <!-- <link rel="stylesheet" href="../../public/profile.css"> -->
+  <style>
+    .post-card button {
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    .post-card button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .post-card button:first-child {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    .post-card {
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  </style>
 </head>
 
 <body>
@@ -71,32 +85,113 @@
         renderPosts();
       }
 
+      async function disableUserAccount(userId) {
+        try {
+          const response = await fetch(`/reports/user/${userId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+          const data = await response.json();
+          
+          if (response.ok) {
+            alert(data.message);
+            // Refresh the reports list
+            await fetchReports();
+          } else {
+            alert(data.error || 'เกิดข้อผิดพลาดในการระงับบัญชี');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('เกิดข้อผิดพลาดในการระงับบัญชี');
+        }
+      }
+
+      async function getUserIdFromPostOrComment(report) {
+        try {
+          let url;
+          if (report.postId) {
+            url = `/posts/${report.postId}`;
+          } else if (report.commentId) {
+            url = `/posts/comment/${report.commentId}`;
+          } else {
+            throw new Error('ไม่พบ ID ของโพสต์หรือความคิดเห็น');
+          }
+          
+          const response = await fetch(url, { credentials: 'include' });
+          const data = await response.json();
+          return data.userId;
+        } catch (error) {
+          console.error('Error getting userId:', error);
+          throw error;
+        }
+      }
+
       function renderPosts() {
         const container = document.getElementById('posts');
         container.innerHTML = '';
         reports.forEach(async report => {
           let theId;
-          console.log(JSON.stringify(report))
           if (report.postId == null){
-            console.log(report.commentId)
             temp = await fetch("/posts/postid/"+report.commentId, { credentials: 'include' });
             temp = await temp.json()
-            console.log("temp", temp)
             theId = temp[0].id;
           }else{
             theId = report.postId;
           }
-          console.log("postId", theId)
           const card = document.createElement('div');
           card.className = 'post-card';
-          card.onclick = () => { window.location.href = `/post?id=${theId}`; };
-          card.innerHTML = `
+          
+          // Create content div and disable pointer events for its children
+          const contentDiv = document.createElement('div');
+          contentDiv.style.pointerEvents = 'none';
+          contentDiv.innerHTML = `
             <span class="category">ประเภทของรายงาน : ${escapeHtml(report.postId ? "กระดานสนทนา" : "ความคิดเห็น")}</span>
             <h2 class="post-content">คำอธิบาย: ${escapeHtml(report.description)}</h2>
             <br>
             <h1>เนื้อหา: ${escapeHtml((report.commentText) ? report.commentText : report.postTitle)}</h1>
             <div class="post-footer"><small>ผู้รายงาน ${report.reporterName} ณ ${report.createdAt}</small></div>
           `;
+          
+          // Create button container
+          const buttonContainer = document.createElement('div');
+          buttonContainer.style.display = 'flex';
+          buttonContainer.style.justifyContent = 'space-between';
+          buttonContainer.style.marginTop = '10px';
+          
+          // Create view button
+          const viewButton = document.createElement('button');
+          viewButton.textContent = 'ดูโพสต์';
+          viewButton.style.padding = '5px 10px';
+          viewButton.onclick = (e) => {
+            e.stopPropagation();
+            window.location.href = `/post?id=${theId}`;
+          };
+          
+          // Create disable account button
+          const disableButton = document.createElement('button');
+          disableButton.textContent = 'ระงับบัญชี';
+          disableButton.style.padding = '5px 10px';
+          disableButton.style.backgroundColor = '#ff4444';
+          disableButton.style.color = 'white';
+          disableButton.style.border = 'none';
+          disableButton.style.borderRadius = '4px';
+          disableButton.onclick = async (e) => {
+            e.stopPropagation();
+            if (confirm('คุณต้องการระงับบัญชีผู้ใช้นี้ใช่หรือไม่?')) {
+              try {
+                const userId = await getUserIdFromPostOrComment(report);
+                await disableUserAccount(userId);
+              } catch (error) {
+                alert('เกิดข้อผิดพลาดในการระงับบัญชี');
+              }
+            }
+          };
+          
+          buttonContainer.appendChild(viewButton);
+          buttonContainer.appendChild(disableButton);
+          
+          card.appendChild(contentDiv);
+          card.appendChild(buttonContainer);
           container.appendChild(card);
         });
       }

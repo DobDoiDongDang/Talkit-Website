@@ -6,6 +6,12 @@ import { db } from '../db/index.js';
 import { reports, posts, comments, users } from '../db/schema.js';
 import { readFile } from "fs/promises";
 import * as path from "path";
+import { CognitoIdentityProviderClient, AdminDisableUserCommand } from "@aws-sdk/client-cognito-identity-provider";
+
+const client = new CognitoIdentityProviderClient({
+  region: process.env.AWS_REGION,
+});
+const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID!;
 
 export const reportsRoute = new Hono();
 
@@ -48,6 +54,50 @@ reportsRoute.post('/post/:postId', async (c) => {
   } catch (err: any) {
     console.error('Report post error:', err);
     return c.json({ error: 'Failed to submit report', details: err?.message }, 500);
+  }
+});
+
+// DELETE /reports/user/:userId - ปิดการใช้งานบัญชีผู้ใช้
+reportsRoute.delete('/user/:userId', async (c) => {
+  try {
+    const userId = Number(c.req.param('userId'));
+    
+    // ตรวจสอบว่าผู้ใช้มี admin role
+    const adminCookie = getCookie(c, 'user');
+    const admin = adminCookie ? JSON.parse(adminCookie) : null;
+    if (!admin || admin.role !== 'admin') {
+      return c.json({ error: 'Unauthorized - Admin access required' }, 401);
+    }
+
+    // ค้นหาผู้ใช้จาก database
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    // ปิดการใช้งานบัญชี Cognito
+    const command = new AdminDisableUserCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: user[0].username
+    });
+
+    await client.send(command);
+
+    return c.json({ 
+      success: true, 
+      message: `ปิดการใช้งานบัญชีผู้ใช้ ${user[0].username} เรียบร้อยแล้ว` 
+    });
+  } catch (err: any) {
+    console.error('Disable user error:', err);
+    return c.json({ 
+      error: 'Failed to disable user account', 
+      details: err?.message 
+    }, 500);
   }
 });
 
@@ -165,6 +215,11 @@ reportsRoute.put('/:reportId/status', async (c) => {
     console.error('Update report status error:', err);
     return c.json({ error: 'Failed to update report', details: err?.message }, 500);
   }
+});
+
+//hard ban
+reportsRoute.delete('/hardban/:userId', async (c) => {
+
 });
 
 async function loadPage(filename: string) {
