@@ -49,12 +49,22 @@ profilesRoute.get('/me', async (c) => {
   const row = await db.query.users.findFirst({ where: eq(users.id, u.id) });
   if (!row) return c.json({ error: 'User not found' }, 404);
   console.log('Fetched user profile:', row.userProfile);
-  return c.json({
+
+  const refreshedUser = {
     id: row.id,
     username: row.username,
     email: row.email,
     userProfile: row.userProfile ?? null,
+  };
+
+  setCookie(c, 'user', JSON.stringify(refreshedUser), {
+    httpOnly: false,
+    secure: false,
+    path: '/',
+    maxAge: 60 * 60,
   });
+
+  return c.json(refreshedUser);
 });
 
 // POST /profiles/me -> update username and/or avatar
