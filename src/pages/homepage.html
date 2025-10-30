@@ -274,7 +274,23 @@
         adminBtn.style.borderColor = '#dc3545';
         adminBtn.addEventListener('click', showAdminCategoryModal);
         
-        // เพิ่มปุ่มเข้า container
+        // สร้างปุ่มไปยังหน้า Reports (visible เฉพาะ admin)
+        const reportsBtn = document.createElement('button');
+        reportsBtn.id = 'admin-reports-btn';
+        reportsBtn.textContent = 'รายงาน';
+        reportsBtn.className = 'new-board-btn';
+        // เลือกสีที่ต่างจากปุ่มอื่นเล็กน้อย
+        reportsBtn.style.backgroundColor = '#2b6cb0';
+        reportsBtn.style.borderColor = '#2b6cb0';
+        reportsBtn.style.color = 'white';
+        reportsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.location.href = '/reports';
+        });
+
+        // เพิ่มปุ่มเข้า container (เรียง: สร้างกระดาน, Reports, จัดการหมวดหมู่)
+        buttonsContainer.appendChild(createPostBtn);
+        buttonsContainer.appendChild(reportsBtn);
         buttonsContainer.appendChild(adminBtn);
       }
     }
