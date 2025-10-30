@@ -46,6 +46,34 @@
     </div>
   </div>
 
+  <!-- เพิ่ม Admin Category Management Modal -->
+  <div id="admin-category-modal" class="modal-overlay" style="display:none;">
+    <div class="modal" style="max-width: 600px;">
+      <h2>จัดการหมวดหมู่ (Admin)</h2>
+      <div class="admin-category-list" id="admin-category-list">
+        <!-- Category list จะแสดงที่นี่ -->
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="close-admin-modal">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-category-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h3>ยืนยันการลบหมวดหมู่</h3>
+      <p id="delete-category-message">คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่นี้?</p>
+      <p style="color: #dc3545; font-size: 14px; margin-top: 10px;">
+        ⚠️ การลบหมวดหมู่จะลบโพสต์, คอมเมนต์, และข้อมูลทั้งหมดในหมวดหมู่นี้ การกระทำนี้ไม่สามารถย้อนกลับได้!
+      </p>
+      <div class="modal-actions">
+        <button id="confirm-delete-category" class="modal-btn" style="background-color: #dc3545;">ลบหมวดหมู่</button>
+        <button id="cancel-delete-category" class="modal-btn cancel">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
   <script>
 
     document.querySelector('.sandbox-btn').addEventListener('click', () => {
@@ -76,9 +104,6 @@
       if (avatarEl) avatarEl.src = (user && user.userProfile) ? user.userProfile : 'user.png';
       if (nameEl && user && user.username) nameEl.textContent = user.username;
     }
-
-    // เรียกใช้งานเมื่อโหลดหน้า
-    hydrateSidebarProfile();
 
     let categories = [];
     let posts = [];
@@ -141,20 +166,27 @@
       return String(s || '').replace(/[&<>"']/g, function (m) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]); });
     }
 
-    // Initial load
-    fetchCategories();
-    // ดึงค่า categoryId จาก query string
-    const params = new URLSearchParams(window.location.search);
-    const categoryId = params.get('categoryId');
-    if (categoryId) {
-      fetchPosts(categoryId); // ดึงโพสต์ตาม categoryId ที่ได้
-      selectedCategory = Number(categoryId);
-    } else {
-      fetchPosts(); // ดึงโพสต์ทั้งหมด
-      selectedCategory = null;
-    };
+    // ย้าย checkAdminStatus ไปเรียกหลัง hydrateSidebarProfile
+    async function init() {
+      await hydrateSidebarProfile();
+      await checkAdminStatus(); // เรียกหลังจากโหลด profile แล้ว
+      
+      // Initial load
+      fetchCategories();
+      // ดึงค่า categoryId จาก query string
+      const params = new URLSearchParams(window.location.search);
+      const categoryId = params.get('categoryId');
+      if (categoryId) {
+        fetchPosts(categoryId);
+        selectedCategory = Number(categoryId);
+      } else {
+        fetchPosts();
+        selectedCategory = null;
+      }
+    }
 
-
+    // เรียกใช้งานเมื่อโหลดหน้า
+    init();
 
     // Sidebar profile click
     document.querySelector('.sidebar .avatar').addEventListener('click', () => {
@@ -191,7 +223,206 @@
     modalOverlay.addEventListener('click', (e) => {
       if (e.target === modalOverlay) modalOverlay.style.display = 'none';
     });
+
+    let isCurrentUserAdmin = false;
+    let categoryToDelete = null;
+
+    // เช็คสถานะ admin
+    async function checkAdminStatus() {
+      try {
+        const res = await fetch('/admin/check', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          isCurrentUserAdmin = data.isAdmin;
+          console.log('Is current user admin?', isCurrentUserAdmin);
+          // แสดงปุ่มจัดการหมวดหมู่ถ้าเป็น admin
+          if (isCurrentUserAdmin) {
+            showAdminControls();
+          }
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+      }
+    }
+
+    // แสดงปุ่มควบคุมสำหรับ admin
+    function showAdminControls() {
+      const createPostBtn = document.querySelector('.new-board-btn');
+      if (createPostBtn && !document.getElementById('admin-buttons-container')) {
+      
+        // สร้าง container สำหรับปุ่มทั้งสอง
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.id = 'admin-buttons-container';
+        buttonsContainer.style.cssText = `
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          margin-bottom: 2rem;
+        `;
+        
+        // ย้ายปุ่มสร้างกระดานเข้า container
+        const parent = createPostBtn.parentNode;
+        parent.insertBefore(buttonsContainer, createPostBtn);
+        buttonsContainer.appendChild(createPostBtn);
+        
+        // สร้างปุ่มจัดการหมวดหมู่
+        const adminBtn = document.createElement('button');
+        adminBtn.id = 'admin-manage-categories';
+        adminBtn.textContent = '⚙️ จัดการหมวดหมู่';
+        adminBtn.className = 'new-board-btn';
+        adminBtn.style.backgroundColor = '#dc3545';
+        adminBtn.style.borderColor = '#dc3545';
+        adminBtn.addEventListener('click', showAdminCategoryModal);
+        
+        // เพิ่มปุ่มเข้า container
+        buttonsContainer.appendChild(adminBtn);
+      }
+    }
+
+    // แสดง modal จัดการหมวดหมู่
+    async function showAdminCategoryModal() {
+      const modal = document.getElementById('admin-category-modal');
+      const listContainer = document.getElementById('admin-category-list');
+      
+      // โหลดหมวดหมู่ทั้งหมด
+      try {
+        const res = await fetch('/categories', { credentials: 'include' });
+        if (res.ok) {
+          const categories = await res.json();
+          renderAdminCategoryList(categories);
+          modal.style.display = 'flex';
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        alert('เกิดข้อผิดพลาดในการโหลดหมวดหมู่');
+      }
+    }
+
+    // แสดงรายการหมวดหมู่สำหรับ admin
+    function renderAdminCategoryList(categories) {
+      const container = document.getElementById('admin-category-list');
+      container.innerHTML = '';
+      
+      categories.forEach(category => {
+        const div = document.createElement('div');
+        div.className = 'admin-category-item';
+        div.style.cssText = `
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          margin-bottom: 10px;
+          background-color: #f8f9fa;
+        `;
+        
+        div.innerHTML = `
+          <div>
+            <span style="font-weight: bold;">${category.name}</span>
+            <small style="color: #666; margin-left: 10px;">ID: ${category.id}</small>
+          </div>
+          <div>
+            <button class="delete-category-btn" data-id="${category.id}" data-name="${category.name}"
+                    style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+              ลบ
+            </button>
+          </div>
+        `;
+        
+        container.appendChild(div);
+      });
+      
+      // เพิ่ม event listeners
+      container.querySelectorAll('.edit-category-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.target.getAttribute('data-id');
+          const name = e.target.getAttribute('data-name');
+          editCategory(id, name);
+        });
+      });
+      
+      container.querySelectorAll('.delete-category-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.target.getAttribute('data-id');
+          const name = e.target.getAttribute('data-name');
+          showDeleteConfirmation(id, name);
+        });
+      });
+    }
+
+    // แสดง confirmation สำหรับการลบ
+    function showDeleteConfirmation(id, name) {
+      categoryToDelete = { id, name };
+      const modal = document.getElementById('delete-category-modal');
+      const message = document.getElementById('delete-category-message');
+      message.textContent = `คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่ "${name}"?`;
+      modal.style.display = 'flex';
+    }
+
+    // ลบหมวดหมู่
+    async function deleteCategory(id) {
+      try {
+        const res = await fetch(`/categories/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        
+        if (res.ok) {
+          const result = await res.json();
+          alert(result.message);
+          
+          // ปิด modals
+          document.getElementById('delete-category-modal').style.display = 'none';
+          document.getElementById('admin-category-modal').style.display = 'none';
+          
+          // รีเฟรชหน้า
+          await fetchCategories();
+          await fetchPosts();
+        } else {
+          const error = await res.json();
+          alert(error.error || 'เกิดข้อผิดพลาดในการลบหมวดหมู่');
+        }
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      }
+    }
+
+    // Event listeners สำหรับ modals
+    document.getElementById('close-admin-modal').addEventListener('click', () => {
+      document.getElementById('admin-category-modal').style.display = 'none';
+    });
+
+    document.getElementById('confirm-delete-category').addEventListener('click', () => {
+      if (categoryToDelete) {
+        deleteCategory(categoryToDelete.id);
+      }
+    });
+
+    document.getElementById('cancel-delete-category').addEventListener('click', () => {
+      document.getElementById('delete-category-modal').style.display = 'none';
+      categoryToDelete = null;
+    });
+
+    // ปิด modal เมื่อคลิกข้างนอก
+    document.getElementById('admin-category-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'admin-category-modal') {
+        document.getElementById('admin-category-modal').style.display = 'none';
+      }
+    });
+
+    document.getElementById('delete-category-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'delete-category-modal') {
+        document.getElementById('delete-category-modal').style.display = 'none';
+        categoryToDelete = null;
+      }
+    });
+
+    // ...existing code...
   </script>
+
+  <!-- ...existing code... -->
 </body>
 
 </html>
