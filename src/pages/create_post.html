@@ -155,19 +155,12 @@
         // **Helper function สำหรับสร้าง image preview เหมือน edit_post.html**
         function createImagePreview(src, onDelete, debugId) {
             const div = document.createElement('div');
-            div.style.position = 'relative';
-            div.style.display = 'inline-block';
-            div.style.margin = '5px';
+            div.className = 'image-wrapper'; // ใช้ class จาก CSS แทน inline style
             div.setAttribute('data-debug-id', debugId);
             
             const imgEl = document.createElement('img');
             imgEl.src = src;
-            imgEl.style.maxWidth = '120px';
-            imgEl.style.maxHeight = '120px';
-            imgEl.style.objectFit = 'cover';
-            imgEl.style.border = '1px solid #ddd';
-            imgEl.style.borderRadius = '8px';
-            imgEl.style.cursor = 'pointer';
+            imgEl.className = 'clickable-image'; // ใช้ class สำหรับ hover effect
             imgEl.title = 'คลิกเพื่อขยาง';
             
             imgEl.addEventListener('click', () => {
@@ -179,18 +172,7 @@
             
             const deleteBtn = document.createElement('button');
             deleteBtn.textContent = '×';
-            deleteBtn.style.position = 'absolute';
-            deleteBtn.style.top = '2px';
-            deleteBtn.style.right = '2px';
-            deleteBtn.style.background = '#ff4d4d';
-            deleteBtn.style.color = '#fff';
-            deleteBtn.style.border = 'none';
-            deleteBtn.style.borderRadius = '50%';
-            deleteBtn.style.width = '20px';
-            deleteBtn.style.height = '20px';
-            deleteBtn.style.cursor = 'pointer';
-            deleteBtn.style.fontSize = '12px';
-            deleteBtn.style.zIndex = '10';
+            deleteBtn.className = 'close-btn'; // ใช้ class จาก CSS
             
             deleteBtn.addEventListener('click', (e) => {
                 e.preventDefault();
