@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>แก้ไขโพสต์</title>
+  <link rel="stylesheet" href="post.css">
+</head>
+
+<body>
+  <div class="container">
+    <!-- Sidebar (เหมือน post.html) -->
+    <aside class="sidebar">
+      <div class="profile">
+        <img src="user.png" alt="User Avatar" class="avatar" id="userAvatar">
+        <h2 id="username">User</h2>
+      </div>
+      <div class="menu">
+        <p class="menu-title">หมวดหมู่</p>
+        <ul class="category-list" id="category-list"></ul>
+      </div>
+      <button class="new-category-btn">สร้างหมวดหมู่ใหม่</button>
+      <button class="sandbox-btn" onclick="window.location.href='/sand'">SandBox</button>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <div class="post-box" id="edit-post-box">
+        <!-- ฟอร์มแก้ไขโพสต์ -->
+        <div class="edit-header">
+          <h2>แก้ไขโพสต์</h2>
+          <div class="edit-actions">
+            <button id="delete-btn" class="delete-post-btn">ลบโพสต์</button>
+            <button id="cancel-btn" class="cancel-post-btn">ยกเลิก</button>
+            <button id="save-btn" class="save-post-btn">บันทึก</button>
+          </div>
+        </div>
+
+        <!-- ฟอร์มแก้ไข -->
+        <form id="edit-form">
+          <!-- หมวดหมู่ (ปิดการแก้ไข) -->
+          <div class="form-group">
+            <label for="category-display">หมวดหมู่:</label>
+            <input type="text" id="category-display" class="locked-input" readonly>
+            <select id="category-select" style="display:none;" required>
+              <option value="">เลือกหมวดหมู่</option>
+            </select>
+          </div>
+
+          <!-- หัวข้อ (ปิดการแก้ไข) -->
+          <div class="form-group">
+            <label for="title-input">หัวข้อ:</label>
+            <input type="text" id="title-input" class="locked-input" readonly>
+          </div>
+
+          <!-- เนื้อหา -->
+          <div class="form-group">
+            <label for="content-input">เนื้อหา:</label>
+            <textarea id="content-input" class="comment-input" placeholder="เขียนเนื้อหาโพสต์ของคุณ..." rows="6" required></textarea>
+          </div>
+
+          <!-- รูปภาพ -->
+          <div class="form-group">
+            <label>รูปภาพ:</label>
+            <div class="comment-actions">
+              <button type="button" id="add-image-btn">แนบรูปภาพ</button>
+            </div>
+            <input type="file" id="image-input" accept="image/*" multiple style="display:none">
+            <div id="image-preview" class="preview-container"></div>
+            <div id="image-debug" style="display:none; margin-top:10px; font-size:12px; color:#666;"></div>
+          </div>
+
+          <!-- โค้ด -->
+          <div class="form-group">
+            <label>โค้ด Python:</label>
+            <div class="comment-actions">
+              <button type="button" id="add-code-btn">เพิ่มโค้ด</button>
+            </div>
+            <div id="code-blocks" class="code-container"></div>
+            <div id="code-debug" style="display:none; margin-top:10px; font-size:12px; color:#666;"></div>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h3>ยืนยันการลบโพสต์</h3>
+      <p>คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+      <div class="modal-actions">
+        <button id="confirm-delete" class="modal-btn">ลบโพสต์</button>
+        <button id="cancel-delete" class="modal-btn cancel">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Modal (เหมือน post.html) -->
+  <div class="modal-overlay" id="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h2>สร้างหมวดหมู่ใหม่</h2>
+      <input type="text" id="category-name" placeholder="กรอกชื่อหมวดหมู่...">
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="cancel-category-btn">ยกเลิก</button>
+        <button class="modal-btn" id="save-category-btn">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Preview Overlay (เหมือน post.html) -->
+  <div id="imagePreviewOverlay" class="image-preview-overlay" style="display:none;">
+    <div class="image-preview-content">
+      <img id="previewedImage" src="" alt="preview">
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let postId = null;
+    let categories = [];
+    let originalCategoryId = null;
+    let originalTitle = null;
+
+    // **State Management - เก็บข้อมูลแยกชัดเจน**
+    const imageState = {
+      existing: [], // รูปที่มีอยู่เดิม (ยังไม่ลบ)
+      new: [],      // รูปใหม่ที่เพิ่ม
+      toDelete: []  // ID ของรูปที่จะลบ
+    };
+
+    const codeState = {
+      existing: [], // โค้ดที่มีอยู่เดิม (ยังไม่ลบ)
+      new: [],      // โค้ดใหม่ที่เพิ่ม
+      toDelete: []  // ID ของโค้ดที่จะลบ
+    };
+
+    // Utility functions
+    function readCookie(name) {
+      const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return v ? decodeURIComponent(v.pop()) : null;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function getPostId() {
+      const params = new URLSearchParams(window.location.search);
+      return parseInt(params.get('id')) || null;
+    }
+
+    function updateDebugInfo() {
+      // แสดงข้อมูล debug
+      const imageDebug = document.getElementById('image-debug');
+      const codeDebug = document.getElementById('code-debug');
+      
+      if (imageDebug) {
+        imageDebug.textContent = `Images - Existing: ${imageState.existing.length}, New: ${imageState.new.length}, ToDelete: ${imageState.toDelete.length}`;
+        imageDebug.style.display = 'block';
+      }
+      
+      if (codeDebug) {
+        codeDebug.textContent = `Codes - Existing: ${codeState.existing.length}, New: ${codeState.new.length}, ToDelete: ${codeState.toDelete.length}`;
+        codeDebug.style.display = 'block';
+      }
+    }
+
+    // Load user profile
+    async function hydrateSidebarProfile() {
+      let user = null;
+      const raw = readCookie('user');
+      if (raw) { try { user = JSON.parse(raw); } catch { } }
+      if (!user || !user.userProfile || !user.username) {
+        try {
+          const res = await fetch('/profiles/me', { credentials: 'include' });
+          if (res.ok) user = await res.json();
+        } catch { }
+      }
+      currentUser = user;
+      const avatarEl = document.querySelector('.sidebar .avatar');
+      const nameEl = document.querySelector('.sidebar #username');
+      if (avatarEl) avatarEl.src = (user && user.userProfile) ? user.userProfile : 'user.png';
+      if (nameEl && user?.username) nameEl.textContent = user.username;
+    }
+
+    // Load categories
+    async function fetchCategories() {
+      try {
+        // Hardcode categories เพื่อหลีกเลี่ยงปัญหา API
+        categories = [
+          { id: 1, name: 'ทั่วไป' },
+          { id: 2, name: 'เทคโนโลยี' },
+          { id: 3, name: 'การศึกษา' },
+          { id: 4, name: 'บันเทิง' },
+          { id: 5, name: 'กีฬา' }
+        ];
+        renderCategories();
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    }
+
+    function renderCategories() {
+      const list = document.getElementById('category-list');
+      list.innerHTML = '';
+      categories.forEach(cat => {
+        const li = document.createElement('li');
+        li.textContent = cat.name;
+        li.addEventListener('click', () => {
+          window.location.href = `/?categoryId=${cat.id}`;
+        });
+        list.appendChild(li);
+      });
+    }
+
+    // Load post data
+    async function loadPostData() {
+      try {
+        const res = await fetch(`/posts/${postId}`, { credentials: 'include' });
+        if (!res.ok) {
+          alert('ไม่พบโพสต์หรือไม่มีสิทธิ์แก้ไข');
+          window.location.href = '/';
+          return;
+        }
+        
+        const data = await res.json();
+        const { post, codes: postCodes, pictures } = data;
+        
+        // Check ownership
+        const ownerRes = await fetch(`/posts/${postId}/owner`, { credentials: 'include' });
+        const ownerData = await ownerRes.json();
+        if (!ownerData.isOwner) {
+          alert('คุณไม่มีสิทธิ์แก้ไขโพสต์นี้');
+          window.location.href = '/';
+          return;
+        }
+        
+        // เก็บค่าเดิมไว้
+        originalCategoryId = post.categoryId;
+        originalTitle = post.title;
+        
+        // Populate form
+        const categoryDisplay = document.getElementById('category-display');
+        const titleInput = document.getElementById('title-input');
+        const contentInput = document.getElementById('content-input');
+        
+        const categoryName = categories.find(cat => cat.id == post.categoryId)?.name || 'ไม่มีหมวดหมู่';
+        categoryDisplay.value = categoryName;
+        titleInput.value = post.title || '';
+        contentInput.value = post.text || '';
+        
+        // **โหลดรูปภาพเดิม - เก็บใน state**
+        if (pictures && pictures.length) {
+          imageState.existing = pictures.map(pic => ({
+            id: pic.id,
+            url: pic.url,
+            originalIndex: imageState.existing.length
+          }));
+        }
+        
+        // **โหลดโค้ดเดิม - เก็บใน state**
+        if (postCodes && postCodes.length) {
+          codeState.existing = postCodes.map(code => ({
+            id: code.id,
+            code: code.code,
+            originalIndex: codeState.existing.length
+          }));
+        }
+        
+        // Render ทั้งหมด
+        renderImagePreviews();
+        renderCodeBlocks();
+        updateDebugInfo();
+        
+      } catch (error) {
+        console.error('Error loading post:', error);
+        alert('เกิดข้อผิดพลาดในการโหลดโพสต์');
+        window.location.href = '/';
+      }
+    }
+
+    // **Render image previews - ใช้ state ใหม่**
+    function renderImagePreviews() {
+      const preview = document.getElementById('image-preview');
+      preview.innerHTML = '';
+      
+      // รูปเดิมที่ยังไม่ลบ
+      imageState.existing.forEach((img, index) => {
+        if (imageState.toDelete.includes(img.id)) return; // ข้ามรูปที่จะลบ
+        
+        const div = createImagePreview(img.url, () => {
+          // เพิ่มเข้าใน toDelete แทนการลบจริง
+          imageState.toDelete.push(img.id);
+          renderImagePreviews();
+          updateDebugInfo();
+        }, `existing-${img.id}`);
+        
+        preview.appendChild(div);
+      });
+      
+      // รูปใหม่
+      imageState.new.forEach((file, index) => {
+        const url = URL.createObjectURL(file);
+        const div = createImagePreview(url, () => {
+          URL.revokeObjectURL(url);
+          imageState.new.splice(index, 1);
+          renderImagePreviews();
+          updateDebugInfo();
+        }, `new-${index}`);
+        
+        preview.appendChild(div);
+      });
+      
+      updateDebugInfo();
+    }
+
+    // Helper function สำหรับสร้าง image preview
+    function createImagePreview(src, onDelete, debugId) {
+      const div = document.createElement('div');
+      div.style.position = 'relative';
+      div.style.display = 'inline-block';
+      div.style.margin = '5px';
+      div.setAttribute('data-debug-id', debugId);
+      
+      const imgEl = document.createElement('img');
+      imgEl.src = src;
+      imgEl.style.maxWidth = '120px';
+      imgEl.style.maxHeight = '120px';
+      imgEl.style.objectFit = 'cover';
+      imgEl.style.border = '1px solid #ddd';
+      imgEl.style.borderRadius = '8px';
+      imgEl.style.cursor = 'pointer';
+      imgEl.title = 'คลิกเพื่อขยาง';
+      
+      imgEl.addEventListener('click', () => {
+        const overlay = document.getElementById('imagePreviewOverlay');
+        const previewImg = document.getElementById('previewedImage');
+        previewImg.src = src;
+        overlay.style.display = 'flex';
+      });
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '×';
+      deleteBtn.style.position = 'absolute';
+      deleteBtn.style.top = '2px';
+      deleteBtn.style.right = '2px';
+      deleteBtn.style.background = '#ff4d4d';
+      deleteBtn.style.color = '#fff';
+      deleteBtn.style.border = 'none';
+      deleteBtn.style.borderRadius = '50%';
+      deleteBtn.style.width = '20px';
+      deleteBtn.style.height = '20px';
+      deleteBtn.style.cursor = 'pointer';
+      deleteBtn.style.fontSize = '12px';
+      deleteBtn.style.zIndex = '10';
+      
+      deleteBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onDelete();
+      });
+      
+      div.appendChild(imgEl);
+      div.appendChild(deleteBtn);
+      return div;
+    }
+
+    // **Render code blocks - ใช้ state ใหม่**
+    function renderCodeBlocks() {
+      const container = document.getElementById('code-blocks');
+      container.innerHTML = '';
+      
+      // โค้ดเดิมที่ยังไม่ลบ
+      codeState.existing.forEach((code, index) => {
+        if (codeState.toDelete.includes(code.id)) return; // ข้ามโค้ดที่จะลบ
+        
+        const blockEl = createCodeBlock(
+          code.code,
+          `Existing Code ${index + 1}`,
+          (newCode) => {
+            // อัพเดทโค้ดเดิม
+            code.code = newCode;
+            updateDebugInfo();
+          },
+          () => {
+            // เพิ่มเข้าใน toDelete แทนการลบจริง
+            codeState.toDelete.push(code.id);
+            renderCodeBlocks();
+            updateDebugInfo();
+          },
+          `existing-${code.id}`
+        );
+        
+        container.appendChild(blockEl);
+      });
+      
+      // โค้ดใหม่
+      codeState.new.forEach((code, index) => {
+        const blockEl = createCodeBlock(
+          code,
+          `New Code ${index + 1}`,
+          (newCode) => {
+            // อัพเดทโค้ดใหม่
+            codeState.new[index] = newCode;
+            updateDebugInfo();
+          },
+          () => {
+            // ลบจริงจาก array
+            codeState.new.splice(index, 1);
+            renderCodeBlocks();
+            updateDebugInfo();
+          },
+          `new-${index}`
+        );
+        
+        container.appendChild(blockEl);
+      });
+      
+      updateDebugInfo();
+    }
+
+    // Helper function สำหรับสร้าง code block
+    function createCodeBlock(initialCode, title, onUpdate, onDelete, debugId) {
+      const wrap = document.createElement('div');
+      wrap.className = 'code-block';
+      wrap.style.marginBottom = '15px';
+      wrap.style.border = '1px solid #ddd';
+      wrap.style.borderRadius = '8px';
+      wrap.style.padding = '10px';
+      wrap.style.backgroundColor = '#f8f9fa';
+      wrap.setAttribute('data-debug-id', debugId);
+      
+      wrap.innerHTML = `
+        <button class="close-btn" type="button" style="float: right; background: #dc3545; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer;">&times;</button>
+        <div class="code-header" style="margin-bottom: 10px; clear: both;">
+          <span style="font-weight: bold;">${title}</span>
+        </div>
+        <div class="code-content-wrapper">
+          <div class="code-content-container" style="display: flex; border: 1px solid #ccc; border-radius: 4px;">
+            <div class="line-numbers" style="background: #f1f3f4; padding: 8px 4px; font-family: monospace; font-size: 12px; line-height: 1.5; min-width: 30px; text-align: right; color: #666; border-right: 1px solid #ccc;">1</div>
+            <textarea class="code-content" placeholder="# เขียนโค้ด Python ของคุณที่นี่..." rows="6" style="flex: 1; border: none; padding: 8px; font-family: monospace; font-size: 14px; line-height: 1.5; resize: vertical; outline: none;">${escapeHtml(initialCode || '')}</textarea>
+          </div>
+        </div>
+        <div class="code-footer" style="margin-top: 10px;">
+          <div class="code-output" style="display:none; background: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 4px; white-space: pre-wrap; font-family: monospace;"></div>
+          <button class="run-btn" type="button" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Run Code</button>
+        </div>
+      `;
+
+      const ta = wrap.querySelector('.code-content');
+      const closeBtn = wrap.querySelector('.close-btn');
+      const runBtn = wrap.querySelector('.run-btn');
+      const outputDiv = wrap.querySelector('.code-output');
+      const lineNumbersDiv = wrap.querySelector('.line-numbers');
+
+      function updateLineNumbers() {
+        const text = ta.value || '';
+        const lines = text.split('\n');
+        const lineCount = lines.length;
+        
+        const lineNumbers = Array.from({length: lineCount}, (_, i) => (i + 1).toString()).join('\n');
+        lineNumbersDiv.textContent = lineNumbers;
+        
+        ta.style.height = 'auto';
+        ta.style.height = Math.max(80, ta.scrollHeight) + 'px';
+      }
+
+      ta.addEventListener('input', () => {
+        onUpdate(ta.value);
+        updateLineNumbers();
+      });
+
+      ta.addEventListener('scroll', () => {
+        lineNumbersDiv.scrollTop = ta.scrollTop;
+      });
+
+      closeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onDelete();
+      });
+
+      runBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const code = ta.value.trim();
+        if (!code) {
+          alert('กรุณาเขียนโค้ดก่อนรัน');
+          return;
+        }
+
+        runBtn.disabled = true;
+        runBtn.textContent = 'Running...';
+        outputDiv.style.display = 'block';
+        outputDiv.textContent = 'Executing code...';
+
+        try {
+          const response = await fetch('/sand/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code }),
+            credentials: 'include'
+          });
+
+          const result = await response.json();
+          outputDiv.textContent = result.result;
+        } catch (error) {
+          outputDiv.textContent = `Network Error: ${error.message}`;
+        } finally {
+          runBtn.disabled = false;
+          runBtn.textContent = 'Run Code';
+        }
+      });
+
+      updateLineNumbers();
+      return wrap;
+    }
+
+    // Add code block
+    function addCodeBlock() {
+      codeState.new.push(''); // เพิ่มโค้ดว่างใหม่
+      renderCodeBlocks();
+      
+      // Focus ไปที่ textarea ใหม่
+      setTimeout(() => {
+        const newBlocks = document.querySelectorAll('[data-debug-id^="new-"]');
+        if (newBlocks.length > 0) {
+          const lastBlock = newBlocks[newBlocks.length - 1];
+          const textarea = lastBlock.querySelector('.code-content');
+          if (textarea) textarea.focus();
+        }
+      }, 100);
+    }
+
+    // Save post
+    async function savePost() {
+      const content = document.getElementById('content-input').value.trim();
+      
+      if (!content) {
+        alert('กรุณากรอกเนื้อหา');
+        return;
+      }
+      
+      const saveBtn = document.getElementById('save-btn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'กำลังบันทึก...';
+      
+      try {
+        const formData = new FormData();
+        formData.append('categoryId', originalCategoryId.toString());
+        formData.append('title', originalTitle);
+        formData.append('text', content);
+        
+        // **ส่งข้อมูลรูปภาพแบบใหม่ - แยกชัดเจน**
+        
+        // 1. ส่ง IDs ของรูปที่ต้องการเก็บไว้
+        const keepImages = imageState.existing.filter(img => !imageState.toDelete.includes(img.id));
+        console.log('Images to keep:', keepImages);
+        formData.append('keepImageIds', JSON.stringify(keepImages.map(img => img.id)));
+        
+        // 2. ส่ง IDs ของรูปที่ต้องการลบ
+        console.log('Images to delete:', imageState.toDelete);
+        formData.append('deleteImageIds', JSON.stringify(imageState.toDelete));
+        
+        // 3. ส่งรูปใหม่
+        console.log('New images to add:', imageState.new.length);
+        imageState.new.forEach((file, index) => {
+          formData.append(`newImages`, file);
+        });
+        
+        // **ส่งข้อมูลโค้ดแบบใหม่ - แยกชัดเจน**
+        
+        // 1. ส่งโค้ดที่ต้องการเก็บไว้พร้อมการแก้ไข
+        const keepCodes = codeState.existing.filter(code => !codeState.toDelete.includes(code.id));
+        console.log('Codes to keep/update:', keepCodes);
+        formData.append('keepCodes', JSON.stringify(keepCodes.map(code => ({
+          id: code.id,
+          code: code.code
+        }))));
+        
+        // 2. ส่ง IDs ของโค้ดที่ต้องการลบ
+        console.log('Codes to delete:', codeState.toDelete);
+        formData.append('deleteCodeIds', JSON.stringify(codeState.toDelete));
+        
+        // 3. ส่งโค้ดใหม่
+        const newCodesFiltered = codeState.new.filter(code => code && code.trim());
+        console.log('New codes to add:', newCodesFiltered);
+        formData.append('newCodes', JSON.stringify(newCodesFiltered));
+        
+        // Debug: แสดงข้อมูลที่จะส่ง
+        console.log('Sending to backend:', {
+          keepImages: keepImages.length,
+          deleteImages: imageState.toDelete.length,
+          newImages: imageState.new.length,
+          keepCodes: keepCodes.length,
+          deleteCodes: codeState.toDelete.length,
+          newCodes: newCodesFiltered.length
+        });
+        
+        const res = await fetch(`/edit_post/${postId}`, {
+          method: 'PUT',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        if (res.ok) {
+          const result = await res.json();
+          console.log('Backend response:', result);
+          alert('บันทึกเรียบร้อยแล้ว');
+          window.location.href = `/post?id=${postId}`;
+        } else {
+          const error = await res.json();
+          console.error('Backend error:', error);
+          alert(error.error || 'เกิดข้อผิดพลาดในการบันทึก');
+        }
+      } catch (error) {
+        console.error('Save error:', error);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'บันทึก';
+      }
+    }
+
+    // Delete post
+    async function deletePost() {
+      try {
+        const res = await fetch(`/edit_post/${postId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        
+        if (res.ok) {
+          alert('ลบโพสต์เรียบร้อยแล้ว');
+          window.location.href = '/';
+        } else {
+          const error = await res.json();
+          alert(error.error || 'เกิดข้อผิดพลาดในการลบโพสต์');
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      }
+    }
+
+    // Setup image preview
+    function setupImagePreview() {
+      const overlay = document.getElementById('imagePreviewOverlay');
+      
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.style.display = 'none';
+        }
+      });
+
+      const imageContent = overlay.querySelector('.image-preview-content');
+      if (imageContent) {
+        imageContent.addEventListener('click', (e) => {
+          const rect = imageContent.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+
+          if (x > rect.width - 60 && y < 60) {
+            overlay.style.display = 'none';
+          }
+        });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.style.display === 'flex') {
+          overlay.style.display = 'none';
+        }
+      });
+    }
+
+    // Event listeners
+    document.getElementById('add-image-btn').addEventListener('click', () => {
+      document.getElementById('image-input').click();
+    });
+
+    document.getElementById('image-input').addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) {
+        imageState.new.push(...files);
+        renderImagePreviews();
+        e.target.value = '';
+      }
+    });
+
+    document.getElementById('add-code-btn').addEventListener('click', (e) => {
+      e.preventDefault();
+      addCodeBlock();
+    });
+
+    document.getElementById('save-btn').addEventListener('click', savePost);
+
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+      if (confirm('คุณแน่ใจหรือไม่ว่าต้องการยกเลิก? การเปลี่ยนแปลงจะไม่ถูกบันทึก')) {
+        window.location.href = `/post?id=${postId}`;
+      }
+    });
+
+    document.getElementById('delete-btn').addEventListener('click', () => {
+      document.getElementById('delete-overlay').style.display = 'flex';
+    });
+
+    document.getElementById('confirm-delete').addEventListener('click', () => {
+      document.getElementById('delete-overlay').style.display = 'none';
+      deletePost();
+    });
+
+    document.getElementById('cancel-delete').addEventListener('click', () => {
+      document.getElementById('delete-overlay').style.display = 'none';
+    });
+
+    // Sidebar profile click
+    document.querySelector('.sidebar .avatar').addEventListener('click', () => {
+      window.location.href = '/profile';
+    });
+
+    // Initialize
+    (async () => {
+      postId = getPostId();
+      if (!postId) {
+        alert('ไม่พบโพสต์');
+        window.location.href = '/';
+        return;
+      }
+      
+      await hydrateSidebarProfile();
+      await fetchCategories();
+      await loadPostData();
+      setupImagePreview();
+    })();
+  </script>
+</body>
+
+</html>
