@@ -190,7 +190,25 @@
     // Load categories
     async function fetchCategories() {
       try {
-        // Hardcode categories เพื่อหลีกเลี่ยงปัญหา API
+        // ใช้ API ที่มีอยู่แล้วใน home.ts
+        const res = await fetch('/categories', { credentials: 'include' });
+        if (!res.ok) {
+          console.error('Failed to fetch categories');
+          // ถ้าดึง API ไม่ได้ ใช้ fallback
+          categories = [
+            { id: 1, name: 'ทั่วไป' },
+            { id: 2, name: 'เทคโนโลยี' },
+            { id: 3, name: 'การศึกษา' },
+            { id: 4, name: 'บันเทิง' },
+            { id: 5, name: 'กีฬา' }
+          ];
+        } else {
+          categories = await res.json();
+        }
+        renderCategories();
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // ใช้ fallback categories
         categories = [
           { id: 1, name: 'ทั่วไป' },
           { id: 2, name: 'เทคโนโลยี' },
@@ -199,8 +217,6 @@
           { id: 5, name: 'กีฬา' }
         ];
         renderCategories();
-      } catch (error) {
-        console.error('Error fetching categories:', error);
       }
     }
 
@@ -735,6 +751,51 @@
       await loadPostData();
       setupImagePreview();
     })();
+
+    // เพิ่ม Category modal handlers เหมือนหน้า post.html
+    const modalOverlay = document.getElementById('modal-overlay');
+    const cancelCategoryBtn = document.getElementById('cancel-category-btn');
+    const saveCategoryBtn = document.getElementById('save-category-btn');
+    const categoryNameInput = document.getElementById('category-name');
+
+    document.querySelector('.new-category-btn').addEventListener('click', () => {
+      modalOverlay.style.display = 'flex';
+      categoryNameInput.value = '';
+      categoryNameInput.focus();
+    });
+
+    cancelCategoryBtn.onclick = () => modalOverlay.style.display = 'none';
+
+    saveCategoryBtn.onclick = async () => {
+      const name = categoryNameInput.value.trim();
+      if (!name) return alert('กรุณากรอกชื่อหมวดหมู่');
+      
+      try {
+        // ใช้ API ที่มีอยู่แล้วใน home.ts
+        const res = await fetch('/categories', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        
+        if (res.ok) {
+          modalOverlay.style.display = 'none';
+          await fetchCategories(); // รีเฟรชหมวดหมู่
+          alert('สร้างหมวดหมู่เรียบร้อย');
+        } else {
+          const error = await res.json();
+          alert(error.error || 'เกิดข้อผิดพลาดในการสร้างหมวดหมู่');
+        }
+      } catch (error) {
+        console.error('Error creating category:', error);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      }
+    };
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) modalOverlay.style.display = 'none';
+    });
   </script>
 </body>
 
