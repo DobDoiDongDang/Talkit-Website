@@ -913,3 +913,157 @@ body {
   transform: scale(1.05);
   box-shadow: 0 4px 15px rgba(0, 91, 255, 0.3);
 }
+
+.edit-post-btn {
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 8px; /* อยู่ข้างๆปุ่มรายงาน */
+  transition: background .15s ease, transform .15s ease;
+}
+
+.edit-post-btn:hover {
+  background: #0b5ed7;
+  transform: translateY(-1px);
+}
+
+/* เพิ่มสไตล์สำหรับหน้าแก้ไข */
+.edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e3f2fd;
+}
+
+.edit-header h2 {
+  color: #0050d4;
+  font-weight: 600;
+  margin: 0;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.delete-post-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.delete-post-btn:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.cancel-post-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.cancel-post-btn:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.save-post-btn {
+  background: #28a745;
+  color: white;
+}
+
+.save-post-btn:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.save-post-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Form styles */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #007bff;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #0050d4;
+  box-shadow: 0 0 8px rgba(0, 91, 255, 0.3);
+  background: #f8faff;
+}
+
+.preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.code-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+/* Locked input สำหรับฟิลด์ที่ไม่ให้แก้ไข */
+.locked-input {
+  background-color: #f8f9fa !important;
+  border: 2px solid #dee2e6 !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+}
+
+.locked-input:focus {
+  border-color: #dee2e6 !important;
+  box-shadow: none !important;
+  background-color: #f8f9fa !important;
+}
+
+/* เพิ่มไอคอนล็อคข้างฟิลด์ */
+.form-group label[for="category-display"]:after,
+.form-group label[for="title-input"]:after {
+  content: "";
+  color: #6c757d;
+  font-size: 14px;
+}

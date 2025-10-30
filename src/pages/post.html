@@ -252,7 +252,7 @@
           <div class="user-info">
             <img src="${escapeHtml(post.userProfile || 'user.png')}" class="post-avatar" alt="User Avatar" />
             <div><h3>${escapeHtml(post.username || 'Anon')}</h3></div>
-            <button onclick='openReportPopup("post")'>รายงาน</button>
+            <button class="report-btn" onclick='openReportPopup("post")'>รายงาน</button>
           </div>
         </div>
         <h4 class="post-title">${escapeHtml(post.title)}</h4>
@@ -638,7 +638,7 @@
           const box = document.createElement('div');
           box.style.position = 'relative';
           box.style.display = 'inline-block';
-          
+
           const img = document.createElement('img');
           img.src = url;
           img.style.maxWidth = '120px';
@@ -648,7 +648,7 @@
           img.style.borderRadius = '8px';
           img.style.cursor = 'pointer';
           img.title = 'คลิกเพื่อขยาย';
-          
+
           // เพิ่ม event สำหรับขยายรูปพรีวิว
           img.addEventListener('click', () => {
             const overlay = document.getElementById('imagePreviewOverlay');
@@ -656,7 +656,7 @@
             previewImg.src = url;
             overlay.style.display = 'flex';
           });
-          
+
           const del = document.createElement('button');
           del.textContent = '×';
           del.style.position = 'absolute';
@@ -673,13 +673,13 @@
           del.style.display = 'flex';
           del.style.alignItems = 'center';
           del.style.justifyContent = 'center';
-          del.onclick = (e) => { 
-            e.stopPropagation(); 
+          del.onclick = (e) => {
+            e.stopPropagation();
             URL.revokeObjectURL(url); // ล้าง memory
-            files.splice(idx, 1); 
-            renderPreviews(); 
+            files.splice(idx, 1);
+            renderPreviews();
           };
-          
+
           box.appendChild(img);
           box.appendChild(del);
           preview.appendChild(box);
@@ -741,8 +741,8 @@
 
       // เพิ่ม event listener ให้รูปทั้งหมดในโพสต์และคอมเมนต์
       document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('post-img') || 
-            e.target.classList.contains('comment-img')) {
+        if (e.target.classList.contains('post-img') ||
+          e.target.classList.contains('comment-img')) {
           e.preventDefault();
           previewImg.src = e.target.src;
           overlay.style.display = 'flex';
@@ -764,7 +764,7 @@
           const rect = imageContent.getBoundingClientRect();
           const x = e.clientX - rect.left;
           const y = e.clientY - rect.top;
-          
+
           // ถ้าคลิกใกล้มุมขวาบน (บริเวณที่มีปุ่ม X)
           if (x > rect.width - 60 && y < 60) {
             overlay.style.display = 'none';
@@ -815,62 +815,115 @@
       targetElement.appendChild(wrapper);
     }
 
-  async function openReportPopup(type, id=null) {
-    const overlay = document.getElementById('report-overlay');
-    const cancelBtn = document.getElementById('report-cancel');
-    const submitBtn = document.getElementById('report-submit');
-    const reason = document.getElementById('report-reason');
+    async function openReportPopup(type, id = null) {
+      const overlay = document.getElementById('report-overlay');
+      const cancelBtn = document.getElementById('report-cancel');
+      const submitBtn = document.getElementById('report-submit');
+      const reason = document.getElementById('report-reason');
 
-    // ดึง ID จากระบบ (แล้วแต่คุณจะใช้ post หรือ comment)
-    const targetId = type == "post" ? getPostId() : id; // สมมติใช้ฟังก์ชันนี้ดึง ID
-    overlay.style.display = 'flex';
+      // ดึง ID จากระบบ (แล้วแต่คุณจะใช้ post หรือ comment)
+      const targetId = type == "post" ? getPostId() : id; // สมมติใช้ฟังก์ชันนี้ดึง ID
+      overlay.style.display = 'flex';
 
-    cancelBtn.onclick = () => (overlay.style.display = 'none');
+      cancelBtn.onclick = () => (overlay.style.display = 'none');
 
-    submitBtn.onclick = async () => {
-      const description = reason.value.trim();
-      if (!description) return alert('กรุณากรอกเหตุผล');
+      submitBtn.onclick = async () => {
+        const description = reason.value.trim();
+        if (!description) return alert('กรุณากรอกเหตุผล');
 
-      // ตัดสินใจเลือก endpoint ตาม type
-      let url = '';
-      if (type === 'post') {
-        url = `/reports/post/${targetId}`;
-      } else if (type === 'comment') {
-        url = `/reports/comment/${targetId}`;
-      } else {
-        alert('ประเภทการรายงานไม่ถูกต้อง');
-        return;
-      }
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            [type === 'post' ? 'postId' : 'commentId']: targetId,
-            description 
-          }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          alert(result.error || 'ไม่สามารถส่งรายงานได้');
+        // ตัดสินใจเลือก endpoint ตาม type
+        let url = '';
+        if (type === 'post') {
+          url = `/reports/post/${targetId}`;
+        } else if (type === 'comment') {
+          url = `/reports/comment/${targetId}`;
+        } else {
+          alert('ประเภทการรายงานไม่ถูกต้อง');
           return;
         }
 
-        alert(result.message || 'รายงานถูกส่งเรียบร้อยแล้ว');
-        overlay.style.display = 'none';
-        reason.value = ''; // เคลียร์ข้อความ
-      } catch (err) {
-        console.error('Report request error:', err);
-        alert('เกิดข้อผิดพลาดในการส่งรายงาน');
-      }
-    };
-  }
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              [type === 'post' ? 'postId' : 'commentId']: targetId,
+              description
+            }),
+          });
 
+          const result = await response.json();
+
+          if (!response.ok) {
+            alert(result.error || 'ไม่สามารถส่งรายงานได้');
+            return;
+          }
+
+          alert(result.message || 'รายงานถูกส่งเรียบร้อยแล้ว');
+          overlay.style.display = 'none';
+          reason.value = ''; // เคลียร์ข้อความ
+        } catch (err) {
+          console.error('Report request error:', err);
+          alert('เกิดข้อผิดพลาดในการส่งรายงาน');
+        }
+      };
+    }
+
+
+    // อ่าน cookie user (สำหรับ fallback)
+    function readCookie(name) {
+      const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return m ? decodeURIComponent(m.pop()) : null;
+    }
+
+    function getPostId() {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('id');
+    }
+
+    async function isOwner(postId) {
+      try {
+        const res = await fetch(`/posts/${postId}/owner`, { credentials: 'include' });
+        if (res.ok) {
+          const json = await res.json();
+          return json.isOwner;
+        }
+      } catch { }
+      // fallback เช็คจาก cookie + data-post-user-id ถ้ามี
+      try {
+        const user = JSON.parse(readCookie('user') || '{}');
+        const ownerId = document.body?.dataset?.postUserId;
+        if (user?.id && ownerId) return String(user.id) === String(ownerId);
+      } catch { }
+      return false;
+    }
+
+    async function injectEditButton() {
+      const postId = getPostId();
+      if (!postId) return;
+
+      const owner = await isOwner(postId);
+      console.log("owner", owner)
+      if (owner == false) {
+        console.log(owner)
+        return;
+      }
+
+      const reportBtn = document.querySelector('.report-btn');
+      if (!reportBtn || document.querySelector('.edit-post-btn')) return;
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'edit-post-btn';
+      editBtn.textContent = 'แก้ไขโพส';
+      editBtn.addEventListener('click', () => {
+        window.location.href = `/edit_post?id=${postId}`;
+      });
+
+      // ใส่ปุ่มไว้ด้านซ้ายของปุ่มรายงาน (ติดกัน)
+      reportBtn.parentElement?.insertBefore(editBtn, reportBtn);
+    }
 
     // โหลดข้อมูลจริง
     (async () => {
@@ -884,15 +937,16 @@
       const [data, cmts] = await Promise.all([fetchPostDetail(postId), fetchComments(postId)]);
       currentPostData = data;
       renderPostDetail(data, cmts);
+      injectEditButton();
     })();
 
     // แก้ไขฟังก์ชันแก้ไขโพสต์
-    window.editPost = function(postId) {
-        // ปิดเมนู
-        document.getElementById(`post-menu-${postId}`).style.display = 'none';
-        
-        // ไปหน้าแก้ไขโพสต์
-        window.location.href = `/edit_post?id=${postId}`;
+    window.editPost = function (postId) {
+      // ปิดเมนู
+      document.getElementById(`post-menu-${postId}`).style.display = 'none';
+
+      // ไปหน้าแก้ไขโพสต์
+      window.location.href = `/posts/edit_post?id=${postId}`;
     };
   </script>
 </body>
