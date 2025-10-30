@@ -172,6 +172,28 @@ postRoute.get("/me", async (c) => {
   }
 });
 
+postRoute.get("/postid/:commentId", async (c) => {
+  try {
+    const commentId = Number(c.req.param("commentId"));
+    if (!commentId) {
+      return c.json({error: "no commentId"}, 400)
+    }
+    const thatPost = await db
+      .select({
+        id: posts.id,
+      })
+      .from(posts)
+      .innerJoin(comments, eq(posts.id, comments.postId))
+      .where(eq(comments.id, commentId))
+      .limit(1)
+      console.log(thatPost)
+    return c.json(thatPost);
+  }catch(error){
+    console.error("cannot find post with comments", error)
+    return c.json({ error: "cannot find post with comments" }, 500);
+  }
+});
+
 // GET /posts/category/:categoryId - include username & userProfile
 postRoute.get("/category/:categoryId", async (c) => {
   try {
