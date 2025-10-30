@@ -49,16 +49,28 @@
                     <textarea class="post-text" placeholder="เขียนสิ่งที่คุณต้องการแชร์..."></textarea>
                 </div>
 
+                <!-- รูปภาพ preview -->
+                <div id="image-preview" class="preview-container"></div>
+
+                <!-- โค้ด blocks -->
+                <div id="code-blocks" class="code-container"></div>
+
                 <!-- ปุ่มเพิ่มเนื้อหา -->
                 <div class="actions">
                     <button class="img-btn">แนบรูปภาพ</button>
                     <button class="code-btn">เพิ่มโค้ด</button>
-                    <button class="cancel-btn" onclick="window.location.href='homepage.html'">ยกเลิก</button>
-                    <!-- เปลี่ยน name เป็น images[] เพื่อให้ backend รวมเป็น array -->
+                    <button class="cancel-btn" onclick="window.location.href='/'">ยกเลิก</button>
                     <input style="display: none;" type="file" id="imageInput" name="images[]" accept="image/*" multiple>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Image Preview Overlay -->
+    <div id="imagePreviewOverlay" class="image-preview-overlay" style="display:none;">
+        <div class="image-preview-content">
+            <img id="previewedImage" src="" alt="preview">
+        </div>
     </div>
 
     <!-- Popup modal -->
@@ -74,7 +86,6 @@
     </div>
 
     <script>
-
         document.querySelector('.sandbox-btn').addEventListener('click', () => {
             window.location.href = '/sand';
         });
@@ -83,6 +94,12 @@
         function readCookie(name) {
             const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
             return v ? decodeURIComponent(v.pop()) : null;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         async function hydrateSidebarProfile() {
@@ -109,119 +126,238 @@
 
         hydrateSidebarProfile();
 
-        // get user from cookie and set username in UI
-        let currentUser = null;
-        const userCookie = readCookie('user');
-        if (userCookie) { try { currentUser = JSON.parse(userCookie); } catch { currentUser = null; } }
-        if (currentUser && currentUser.username) {
-            const unameEl = document.getElementById('username');
-            const uname = document.getElementById('post-username');
-            if (unameEl) unameEl.textContent = currentUser.username;
-            if (uname) uname.textContent = currentUser.username;
-        }
-        // set sidebar avatar + header avatar
-        const sidebarAvatar = document.querySelector('.sidebar .avatar');
-        if (sidebarAvatar) sidebarAvatar.src = (currentUser && currentUser.userProfile) ? currentUser.userProfile : 'user.png';
-        const headerAvatar = document.querySelector('.post-header .post-avatar');
-        if (headerAvatar) headerAvatar.src = (currentUser && currentUser.userProfile) ? currentUser.userProfile : 'user.png';
+        // **State Management เหมือน edit_post.html**
+        const imageState = {
+            new: [] // รูปใหม่ที่เพิ่ม
+        };
 
-        const postContent = document.getElementById('postContent');
+        const codeState = {
+            new: [] // โค้ดใหม่ที่เพิ่ม
+        };
+
+        // **Render image previews เหมือน edit_post.html**
+        function renderImagePreviews() {
+            const preview = document.getElementById('image-preview');
+            preview.innerHTML = '';
+            
+            imageState.new.forEach((file, index) => {
+                const url = URL.createObjectURL(file);
+                const div = createImagePreview(url, () => {
+                    URL.revokeObjectURL(url);
+                    imageState.new.splice(index, 1);
+                    renderImagePreviews();
+                }, `new-${index}`);
+                
+                preview.appendChild(div);
+            });
+        }
+
+        // **Helper function สำหรับสร้าง image preview เหมือน edit_post.html**
+        function createImagePreview(src, onDelete, debugId) {
+            const div = document.createElement('div');
+            div.className = 'image-wrapper'; // ใช้ class จาก CSS แทน inline style
+            div.setAttribute('data-debug-id', debugId);
+            
+            const imgEl = document.createElement('img');
+            imgEl.src = src;
+            imgEl.className = 'clickable-image'; // ใช้ class สำหรับ hover effect
+            imgEl.title = 'คลิกเพื่อขยาง';
+            
+            imgEl.addEventListener('click', () => {
+                const overlay = document.getElementById('imagePreviewOverlay');
+                const previewImg = document.getElementById('previewedImage');
+                previewImg.src = src;
+                overlay.style.display = 'flex';
+            });
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '×';
+            deleteBtn.className = 'close-btn'; // ใช้ class จาก CSS
+            
+            deleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDelete();
+            });
+            
+            div.appendChild(imgEl);
+            div.appendChild(deleteBtn);
+            return div;
+        }
+
+        // **Render code blocks เหมือน edit_post.html**
+        function renderCodeBlocks() {
+            const container = document.getElementById('code-blocks');
+            container.innerHTML = '';
+            
+            codeState.new.forEach((code, index) => {
+                const blockEl = createCodeBlock(
+                    code,
+                    `Code ${index + 1}`,
+                    (newCode) => {
+                        codeState.new[index] = newCode;
+                    },
+                    () => {
+                        codeState.new.splice(index, 1);
+                        renderCodeBlocks();
+                    },
+                    `new-${index}`
+                );
+                
+                container.appendChild(blockEl);
+            });
+        }
+
+        // **Helper function สำหรับสร้าง code block เหมือน edit_post.html**
+        function createCodeBlock(initialCode, title, onUpdate, onDelete, debugId) {
+            const wrap = document.createElement('div');
+            wrap.className = 'code-block';
+            wrap.style.marginBottom = '15px';
+            wrap.style.border = '1px solid #ddd';
+            wrap.style.borderRadius = '8px';
+            wrap.style.padding = '10px';
+            wrap.style.backgroundColor = '#f8f9fa';
+            wrap.setAttribute('data-debug-id', debugId);
+            
+            wrap.innerHTML = `
+                <button class="close-btn" type="button" style="float: right; background: #dc3545; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer;">&times;</button>
+                <div class="code-header" style="margin-bottom: 10px; clear: both;">
+                    <span style="font-weight: bold;">${title}</span>
+                </div>
+                <div class="code-content-wrapper">
+                    <div class="code-content-container" style="display: flex; border: 1px solid #ccc; border-radius: 4px;">
+                        <div class="line-numbers" style="background: #f1f3f4; padding: 8px 4px; font-family: monospace; font-size: 12px; line-height: 1.5; min-width: 30px; text-align: right; color: #666; border-right: 1px solid #ccc;">1</div>
+                        <textarea class="code-content" placeholder="# เขียนโค้ด Python ของคุณที่นี่..." rows="6" style="flex: 1; border: none; padding: 8px; font-family: monospace; font-size: 14px; line-height: 1.5; resize: vertical; outline: none;">${escapeHtml(initialCode || '')}</textarea>
+                    </div>
+                </div>
+                <div class="code-footer" style="margin-top: 10px;">
+                    <div class="code-output" style="display:none; background: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 4px; white-space: pre-wrap; font-family: monospace;"></div>
+                    <button class="run-btn" type="button" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Run Code</button>
+                </div>
+            `;
+
+            const ta = wrap.querySelector('.code-content');
+            const closeBtn = wrap.querySelector('.close-btn');
+            const runBtn = wrap.querySelector('.run-btn');
+            const outputDiv = wrap.querySelector('.code-output');
+            const lineNumbersDiv = wrap.querySelector('.line-numbers');
+
+            function updateLineNumbers() {
+                const text = ta.value || '';
+                const lines = text.split('\n');
+                const lineCount = lines.length;
+                
+                const lineNumbers = Array.from({length: lineCount}, (_, i) => (i + 1).toString()).join('\n');
+                lineNumbersDiv.textContent = lineNumbers;
+                
+                ta.style.height = 'auto';
+                ta.style.height = Math.max(80, ta.scrollHeight) + 'px';
+            }
+
+            ta.addEventListener('input', () => {
+                onUpdate(ta.value);
+                updateLineNumbers();
+            });
+
+            ta.addEventListener('scroll', () => {
+                lineNumbersDiv.scrollTop = ta.scrollTop;
+            });
+
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDelete();
+            });
+
+            runBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const code = ta.value.trim();
+                if (!code) {
+                    alert('กรุณาเขียนโค้ดก่อนรัน');
+                    return;
+                }
+
+                runBtn.disabled = true;
+                runBtn.textContent = 'Running...';
+                outputDiv.style.display = 'block';
+                outputDiv.textContent = 'Executing code...';
+
+                try {
+                    const response = await fetch('/sand/run', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code }),
+                        credentials: 'include'
+                    });
+
+                    const result = await response.json();
+                    outputDiv.textContent = result.result;
+                } catch (error) {
+                    outputDiv.textContent = `Network Error: ${error.message}`;
+                } finally {
+                    runBtn.disabled = false;
+                    runBtn.textContent = 'Run Code';
+                }
+            });
+
+            updateLineNumbers();
+            return wrap;
+        }
+
+        // **Add code block function**
+        function addCodeBlock() {
+            codeState.new.push('');
+            renderCodeBlocks();
+            
+            // Focus ไปที่ textarea ใหม่
+            setTimeout(() => {
+                const newBlocks = document.querySelectorAll('[data-debug-id^="new-"]');
+                if (newBlocks.length > 0) {
+                    const lastBlock = newBlocks[newBlocks.length - 1];
+                    const textarea = lastBlock.querySelector('.code-content');
+                    if (textarea) textarea.focus();
+                }
+            }, 100);
+        }
+
+        // **Setup image preview overlay**
+        function setupImagePreview() {
+            const overlay = document.getElementById('imagePreviewOverlay');
+            
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && overlay.style.display === 'flex') {
+                    overlay.style.display = 'none';
+                }
+            });
+        }
+
+        // **Event Listeners - แก้ไขให้ใช้ state management**
         const codeBtn = document.querySelector('.code-btn');
         const imgBtn = document.querySelector('.img-btn');
         const imageInput = document.getElementById('imageInput');
 
-        // เก็บข้อมูลรูปและโค้ดในตัวแปร
-        let uploadedImages = [];
-        let codeBlocks = [];
-
-        /* เพิ่ม code block แยก container */
-        codeBtn.addEventListener('click', () => {
-            const codeData = {
-                id: Date.now(),
-                code: ''
-            };
-            codeBlocks.push(codeData);
-
-            const postItem = document.createElement('div');
-            postItem.classList.add('post-item');
-            postItem.dataset.codeId = codeData.id;
-
-            const codeBlock = document.createElement('div');
-            codeBlock.classList.add('code-block');
-            codeBlock.innerHTML = `
-          <button class="close-btn">&times;</button>
-          <div class="code-header">Python</div>
-          <textarea class="code-content" placeholder="เขียนโค้ดของคุณที่นี่..."></textarea>
-      `;
-
-            codeBlock.querySelector('.close-btn').addEventListener('click', () => {
-                codeBlocks = codeBlocks.filter(code => code.id !== codeData.id);
-                postItem.remove();
-            });
-
-            codeBlock.querySelector('.code-content').addEventListener('input', (e) => {
-                const index = codeBlocks.findIndex(code => code.id === codeData.id);
-                if (index !== -1) {
-                    codeBlocks[index].code = e.target.value;
-                }
-            });
-
-            postItem.appendChild(codeBlock);
-
-            postContent.appendChild(postItem);
-            postItem.scrollIntoView({ behavior: 'smooth' });
+        // เพิ่มโค้ด - ใช้ฟังก์ชันใหม่
+        codeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addCodeBlock();
         });
 
-        /* แนบรูปภาพแยก container */
+        // แนบรูปภาพ - ใช้ state management
         imgBtn.addEventListener('click', () => imageInput.click());
 
         imageInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
-            if (files.length === 0) return;
-
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function (event) {
-                    const imageData = {
-                        id: Date.now(), // temp id for frontend
-                        data: event.target.result
-                    };
-                    uploadedImages.push(imageData);
-
-                    const postItem = document.createElement('div');
-                    postItem.classList.add('post-item');
-                    postItem.dataset.imageId = imageData.id;
-
-                    const wrapper = document.createElement('div');
-                    wrapper.classList.add('image-wrapper');
-                    wrapper.innerHTML = `
-                  <button class="close-btn">&times;</button>
-                  <img src="${imageData.data}" alt="Preview Image">
-              `;
-
-                    wrapper.querySelector('.close-btn').addEventListener('click', () => {
-                        uploadedImages = uploadedImages.filter(img => img.id !== imageData.id);
-                        postItem.remove();
-                    });
-
-                    // กำหนดขนาดรูป
-                    const img = wrapper.querySelector('img');
-                    img.style.maxWidth = "100%";
-                    img.style.maxHeight = "250px";
-                    img.style.borderRadius = "8px";
-                    wrapper.style.border = "1px solid #007bff";
-                    wrapper.style.padding = "8px";
-                    wrapper.style.marginBottom = "10px";
-                    wrapper.style.position = "relative";
-
-                    postItem.appendChild(wrapper);
-
-                    postContent.appendChild(postItem);
-                    postItem.scrollIntoView({ behavior: 'smooth' });
-                };
-                reader.readAsDataURL(file);
-            });
-
+            if (files.length > 0) {
+                imageState.new.push(...files);
+                renderImagePreviews();
+                e.target.value = ''; // Clear input
+            }
         });
 
         // Sidebar profile click
@@ -296,13 +432,13 @@
         // Call on page load
         loadCategories();
 
+        // **แก้ไขการส่งข้อมูล - ใช้ state management**
         document.querySelector('.post-btn').addEventListener('click', async (e) => {
             e.preventDefault();
 
             const title = document.querySelector('.post-title').value.trim();
             const text = document.querySelector('.post-text').value.trim();
             const categoryId = document.querySelector('.category-dropdown').value;
-            const codes = codeBlocks.map(code => code.code).filter(code => code.trim());
 
             if (!title || !categoryId) {
                 alert('กรุณากรอกข้อมูลให้ครบถ้วน');
@@ -313,12 +449,23 @@
             formData.append("title", title);
             formData.append("text", text);
             formData.append("categoryId", categoryId);
+
+            // ส่งโค้ดจาก state
+            const codes = codeState.new.filter(code => code && code.trim());
             codes.forEach(code => formData.append("codes", code));
 
-            // ส่งไฟล์ทุกไฟล์ด้วย key เดิม images[]
-            for (const file of imageInput.files) {
+            // ส่งรูปภาพจาก state
+            imageState.new.forEach(file => {
                 formData.append("images", file);
-            }
+            });
+
+            console.log('Sending to backend:', {
+                title,
+                text,
+                categoryId,
+                codes: codes.length,
+                images: imageState.new.length
+            });
 
             const res = await fetch('/posts', {
                 method: 'POST',
@@ -332,8 +479,13 @@
                 return;
             }
 
+            const result = await res.json();
+            console.log('Post created successfully:', result);
             window.location.href = '/';
         });
+
+        // Initialize
+        setupImagePreview();
     </script>
 </body>
 
