@@ -1067,3 +1067,81 @@ body {
   color: #6c757d;
   font-size: 14px;
 }
+
+/* =====================
+   Unified Code Block Style (no line numbers, dark theme)
+   ===================== */
+.code-block {
+  border: 1px solid #30363d !important;
+  background: #0d1117 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+.code-header {
+  background: #161b22 !important;
+  color: #e6edf3 !important;
+  border-bottom: 1px solid #30363d !important;
+}
+
+.code-content-wrapper {
+  background: #0d1117 !important;
+}
+
+.line-numbers {
+  display: none !important;
+}
+
+.code-content {
+  width: 100% !important;
+  background: #0d1117 !important;
+  color: #e6edf3 !important;
+}
+
+.small-code .line-numbers {
+  display: none !important;
+}
+
+.small-code .code-content {
+  width: 100% !important;
+}
+
+.code-footer {
+  background: #161b22 !important;
+  border-top: 1px solid #30363d !important;
+}
+
+/* Standardize output colors */
+.code-output,
+.result-box {
+  background: #0f131a !important;
+  border: 1px solid #30363d !important;
+  color: #e6edf3 !important;
+}
+
+.code-output.success,
+.result-box.success {
+  background: #d4edda !important;
+  border-color: #c3e6cb !important;
+  color: #155724 !important;
+}
+
+.code-output.error,
+.result-box.error {
+  background: #f8d7da !important;
+  border-color: #f5c6cb !important;
+  color: #721c24 !important;
+}
+
+/* High-contrast syntax colors for dark theme */
+.syntax-keyword { color: #ff7b72 !important; font-weight: 600; }
+.syntax-string  { color: #a5d6ff !important; }
+.syntax-comment { color: #8b949e !important; font-style: italic; }
+.syntax-number  { color: #79c0ff !important; }
+.syntax-function{ color: #d2a8ff !important; }
+.syntax-variable{ color: #ffa657 !important; }
+
+/* Ensure comment composer blocks inherit dark theme */
+.comment-section .code-block { background: #0d1117 !important; border-color: #30363d !important; }
+.comment-section .code-header { background: #161b22 !important; color: #e6edf3 !important; }
+.comment-section .code-content { background: #0d1117 !important; color: #e6edf3 !important; }
+.comment-section .code-footer { background: #161b22 !important; border-top: 1px solid #30363d !important; }

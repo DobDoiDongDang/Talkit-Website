@@ -185,7 +185,7 @@
             return div;
         }
 
-        // **Render code blocks เหมือน edit_post.html**
+        // **Render code blocks (ให้เหมือนหน้า post - ไม่มีเลขบรรทัด/ไม่โชว์จำนวนบรรทัด)**
         function renderCodeBlocks() {
             const container = document.getElementById('code-blocks');
             container.innerHTML = '';
@@ -193,7 +193,7 @@
             codeState.new.forEach((code, index) => {
                 const blockEl = createCodeBlock(
                     code,
-                    `Code ${index + 1}`,
+                    `Python Code`,
                     (newCode) => {
                         codeState.new[index] = newCode;
                     },
@@ -208,31 +208,25 @@
             });
         }
 
-        // **Helper function สำหรับสร้าง code block เหมือน edit_post.html**
+        // **Helper function สำหรับสร้าง code block ให้เหมือนหน้า post**
         function createCodeBlock(initialCode, title, onUpdate, onDelete, debugId) {
             const wrap = document.createElement('div');
             wrap.className = 'code-block';
-            wrap.style.marginBottom = '15px';
-            wrap.style.border = '1px solid #ddd';
-            wrap.style.borderRadius = '8px';
-            wrap.style.padding = '10px';
-            wrap.style.backgroundColor = '#f8f9fa';
             wrap.setAttribute('data-debug-id', debugId);
             
             wrap.innerHTML = `
-                <button class="close-btn" type="button" style="float: right; background: #dc3545; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer;">&times;</button>
-                <div class="code-header" style="margin-bottom: 10px; clear: both;">
-                    <span style="font-weight: bold;">${title}</span>
+                <button class="close-btn" type="button">&times;</button>
+                <div class="code-header">
+                    <span>${title}</span>
                 </div>
                 <div class="code-content-wrapper">
-                    <div class="code-content-container" style="display: flex; border: 1px solid #ccc; border-radius: 4px;">
-                        <div class="line-numbers" style="background: #f1f3f4; padding: 8px 4px; font-family: monospace; font-size: 12px; line-height: 1.5; min-width: 30px; text-align: right; color: #666; border-right: 1px solid #ccc;">1</div>
-                        <textarea class="code-content" placeholder="# เขียนโค้ด Python ของคุณที่นี่..." rows="6" style="flex: 1; border: none; padding: 8px; font-family: monospace; font-size: 14px; line-height: 1.5; resize: vertical; outline: none;">${escapeHtml(initialCode || '')}</textarea>
+                    <div class="code-content-container">
+                        <textarea class="code-content" placeholder="# เขียนโค้ด Python ของคุณที่นี่..." rows="6">${escapeHtml(initialCode || '')}</textarea>
                     </div>
                 </div>
-                <div class="code-footer" style="margin-top: 10px;">
-                    <div class="code-output" style="display:none; background: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 4px; white-space: pre-wrap; font-family: monospace;"></div>
-                    <button class="run-btn" type="button" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Run Code</button>
+                <div class="code-footer">
+                    <div class="code-output" style="display:none;"></div>
+                    <button class="run-btn" type="button">Run Code</button>
                 </div>
             `;
 
@@ -240,27 +234,15 @@
             const closeBtn = wrap.querySelector('.close-btn');
             const runBtn = wrap.querySelector('.run-btn');
             const outputDiv = wrap.querySelector('.code-output');
-            const lineNumbersDiv = wrap.querySelector('.line-numbers');
-
-            function updateLineNumbers() {
-                const text = ta.value || '';
-                const lines = text.split('\n');
-                const lineCount = lines.length;
-                
-                const lineNumbers = Array.from({length: lineCount}, (_, i) => (i + 1).toString()).join('\n');
-                lineNumbersDiv.textContent = lineNumbers;
-                
+            
+            function autoResize() {
                 ta.style.height = 'auto';
                 ta.style.height = Math.max(80, ta.scrollHeight) + 'px';
             }
 
             ta.addEventListener('input', () => {
                 onUpdate(ta.value);
-                updateLineNumbers();
-            });
-
-            ta.addEventListener('scroll', () => {
-                lineNumbersDiv.scrollTop = ta.scrollTop;
+                autoResize();
             });
 
             closeBtn.addEventListener('click', (e) => {
@@ -281,6 +263,7 @@
                 runBtn.textContent = 'Running...';
                 outputDiv.style.display = 'block';
                 outputDiv.textContent = 'Executing code...';
+                outputDiv.className = 'code-output';
 
                 try {
                     const response = await fetch('/sand/run', {
@@ -290,17 +273,22 @@
                         credentials: 'include'
                     });
 
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
                     const result = await response.json();
                     outputDiv.textContent = result.result;
+                    outputDiv.className = 'code-output success';
                 } catch (error) {
                     outputDiv.textContent = `Network Error: ${error.message}`;
+                    outputDiv.className = 'code-output error';
                 } finally {
                     runBtn.disabled = false;
                     runBtn.textContent = 'Run Code';
                 }
             });
 
-            updateLineNumbers();
+            autoResize();
             return wrap;
         }
 

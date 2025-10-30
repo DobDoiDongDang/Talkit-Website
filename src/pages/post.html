@@ -533,11 +533,9 @@
             <button class="close-btn" type="button">&times;</button>
             <div class="code-header">
               <span>Python Code</span>
-              <span>New</span>
             </div>
             <div class="code-content-wrapper">
               <div class="code-content-container">
-                <div class="line-numbers">1</div>
                 <textarea class="code-content comment-textarea" placeholder="# เขียนโค้ด Python ของคุณที่นี่...\nprint('Hello, World!')" rows="4"></textarea>
               </div>
             </div>
@@ -551,25 +549,11 @@
           const closeBtn = wrap.querySelector('.close-btn');
           const runBtn = wrap.querySelector('.run-btn');
           const outputDiv = wrap.querySelector('.code-output');
-          const lineNumbersDiv = wrap.querySelector('.line-numbers');
 
           codes.push('');
           const syncIndex = () => Array.from(codeList.children).indexOf(wrap);
 
-          function updateLineNumbers() {
-            const text = ta.value || '';
-            const lines = text.split('\n');
-            const lineCount = lines.length;
-            const maxDigits = lineCount.toString().length;
-
-            // สร้างเลขบรรทัดโดยจำกัดความกว้าง
-            const lineNumbers = Array.from({ length: lineCount }, (_, i) =>
-              (i + 1).toString().padStart(Math.max(2, maxDigits), ' ')
-            ).join('\n');
-
-            lineNumbersDiv.textContent = lineNumbers;
-
-            // ปรับความสูงของ textarea ให้ตรงกับเนื้อหา
+          function autoResize() {
             ta.style.height = 'auto';
             ta.style.height = Math.max(80, ta.scrollHeight) + 'px';
           }
@@ -577,12 +561,7 @@
           ta.addEventListener('input', () => {
             const idx = syncIndex();
             if (idx > -1) codes[idx] = ta.value;
-            updateLineNumbers();
-          });
-
-          ta.addEventListener('scroll', () => {
-            // ซิงค์การ scroll ระหว่าง line numbers และ content
-            lineNumbersDiv.scrollTop = ta.scrollTop;
+            autoResize();
           });
 
           closeBtn.addEventListener('click', () => {
@@ -626,7 +605,7 @@
 
           codeList.appendChild(wrap);
           ta.focus();
-          updateLineNumbers();
+          autoResize();
         };
       }
 

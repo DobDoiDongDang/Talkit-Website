@@ -657,3 +657,100 @@ body {
   word-wrap: break-word;
   font-size: 12px;
 }
+
+/* =====================
+   Unified Code Block Style (no line numbers, gray theme)
+   ===================== */
+.code-block {
+  border: 1px solid #dcdcdc !important;
+  background: #f5f5f5 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+.code-header {
+  background: #e0e0e0 !important;
+  color: #333 !important;
+  border-bottom: 1px solid #d0d0d0 !important;
+}
+
+.code-content-wrapper {
+  background: #f5f5f5 !important;
+}
+
+.line-numbers {
+  display: none !important;
+}
+
+.code-content {
+  width: 100% !important;
+  background: #f5f5f5 !important;
+}
+
+.code-footer {
+  background: #eaeaea !important;
+  border-top: 1px solid #d0d0d0 !important;
+}
+
+/* Standardize output colors */
+.code-output,
+.result-box {
+  background: #f8f8f8 !important;
+  border: 1px solid #dcdcdc !important;
+  color: #222 !important;
+}
+
+.code-output.success,
+.result-box.success {
+  background: #d4edda !important;
+  border-color: #c3e6cb !important;
+  color: #155724 !important;
+}
+
+.code-output.error,
+.result-box.error {
+  background: #f8d7da !important;
+  border-color: #f5c6cb !important;
+  color: #721c24 !important;
+}
+
+/* =====================
+   Dark theme to match post page
+   ===================== */
+.code-block {
+  border: 1px solid #30363d !important;
+  background: #0d1117 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+.code-header {
+  background: #161b22 !important;
+  color: #e6edf3 !important;
+  border-bottom: 1px solid #30363d !important;
+}
+
+.code-content-wrapper,
+.code-content {
+  background: #0d1117 !important;
+  color: #e6edf3 !important;
+}
+
+.line-numbers { display: none !important; }
+
+.code-footer {
+  background: #161b22 !important;
+  border-top: 1px solid #30363d !important;
+}
+
+.code-output {
+  background: #0f131a !important;
+  border: 1px solid #30363d !important;
+  color: #e6edf3 !important;
+}
+
+/* High-contrast syntax colors for dark theme (if any highlighting present) */
+.syntax-keyword { color: #ff7b72 !important; font-weight: 600; }
+.syntax-string  { color: #a5d6ff !important; }
+.syntax-comment { color: #8b949e !important; font-style: italic; }
+.syntax-number  { color: #79c0ff !important; }
+.syntax-function{ color: #d2a8ff !important; }
+.syntax-variable{ color: #ffa657 !important; }

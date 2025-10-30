@@ -150,9 +150,9 @@ body {
 }
 
 .code-container {
-  border: 1px solid #007bff;
+  border: 1px solid #dcdcdc;
   border-radius: 10px;
-  background: #f8faff;
+  background: #f5f5f5;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -160,8 +160,8 @@ body {
 }
 
 .code-header {
-  background: #0050d4;
-  color: #fff;
+  background: #e0e0e0; /* gray */
+  color: #333;
   padding: 10px 12px;
   font-weight: 600;
 }
@@ -185,7 +185,7 @@ body {
 }
 
 .result-section {
-  background: #e3f2fd;
+  background: #eaeaea; /* gray */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -234,13 +234,13 @@ body {
 
 /* แก้ไข result-box ให้มีสีเหมือนกับ code-output ในหน้า post */
 .result-box {
-  background: white;
-  border-top: 1px solid #c3ddff;
+  background: #f8f8f8;
+  border-top: 1px solid #dcdcdc;
   border-radius: 0 0 10px 10px;
   padding: 15px;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 14px;
-  color: #003366;
+  color: #222;
   min-height: 120px;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -259,6 +259,13 @@ body {
   background: #f8d7da;
   border-color: #f5c6cb;
   color: #721c24;
+}
+
+/* Make sure any .code-output here matches as well */
+.code-output {
+  background: #f8f8f8 !important;
+  border: 1px solid #dcdcdc !important;
+  color: #222 !important;
 }
 
 /* Modal */
