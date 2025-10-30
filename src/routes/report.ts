@@ -4,6 +4,8 @@ import { getCookie } from 'hono/cookie';
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { reports, posts, comments, users } from '../db/schema.js';
+import { readFile } from "fs/promises";
+import * as path from "path";
 
 export const reportsRoute = new Hono();
 
@@ -163,4 +165,13 @@ reportsRoute.put('/:reportId/status', async (c) => {
     console.error('Update report status error:', err);
     return c.json({ error: 'Failed to update report', details: err?.message }, 500);
   }
+});
+
+async function loadPage(filename: string) {
+  const filePath = path.join(process.cwd(), "src/pages", filename);
+  return await readFile(filePath, "utf-8");
+}
+
+reportsRoute.get("/", async (c) => {
+  return c.html(await loadPage("report.html"));
 });
