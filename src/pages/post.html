@@ -252,6 +252,7 @@
           <div class="user-info">
             <img src="${escapeHtml(post.userProfile || 'user.png')}" class="post-avatar" alt="User Avatar" />
             <div><h3>${escapeHtml(post.username || 'Anon')}</h3></div>
+            <button onclick='openReportPopup("post")'>รายงาน</button>
           </div>
         </div>
         <h4 class="post-title">${escapeHtml(post.title)}</h4>
