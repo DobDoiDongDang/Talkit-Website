@@ -202,11 +202,17 @@ body {
 
 .profile-card {
   display: flex;
-  gap: 3rem;
+  flex-direction: column; /* จัดเรียงแนวตั้ง */
+  gap: 2rem; /* เพิ่มระยะห่างระหว่าง content กับ actions */
   background: #ffffff;
   border-radius: 25px;
   padding: 2rem 3rem;
   box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.profile-content {
+  display: flex;
+  gap: 3rem;
 }
 
 .left-section, .right-section {
@@ -279,9 +285,29 @@ body {
   width: 100%;
 }
 
+.profile-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem; /* เพิ่มระยะห่างด้านบน */
+}
+
+.profile-actions .save-btn,
+.profile-actions .logout-btn {
+  width: auto; /* ปรับความกว้างอัตโนมัติ */
+  min-width: 180px; /* กำหนดความกว้างขั้นต่ำ */
+  padding: 12px 25px; /* ปรับ padding */
+}
+
+.right-section form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .save-btn {
   width: 100%;
-  margin-top: 1.5rem;
+  margin-top: 0; /* ลบ margin-top เดิม */
   padding: 12px;
   border-radius: 25px;
   border: none;
@@ -299,7 +325,7 @@ body {
 
 .logout-btn {
   width: 100%;
-  margin-top: 1rem;
+  margin-top: 0; /* ลบ margin-top เดิม */
   padding: 12px;
   border-radius: 25px;
   border: none;

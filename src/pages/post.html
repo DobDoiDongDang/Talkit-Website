@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ดูโพสต์ทั้งหมด</title>
   <link rel="stylesheet" href="post.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <style>
     /* Small red report button used for posts and comments */
     .report-btn {
@@ -255,21 +257,44 @@
       ).join('\n');
     }
 
+    function sanitizeCode(dirtyCode) {
+      if (!dirtyCode) return '';
+      // Use DOMParser to robustly parse and extract text content.
+      // This is the most reliable way to strip all HTML tags and entities.
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(dirtyCode, 'text/html');
+      return doc.body.textContent || "";
+    }
+
     // แก้ไข syntax highlighting ให้ไม่ทำลาย HTML structure
     function highlightSyntax(code) {
       if (!code) return '';
 
+      // The code is now pre-sanitized, so we just need to escape and highlight.
       return code
-        // Escape HTML ก่อน
+        // Escape HTML before applying spans
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        // ตัว highlighting
+        // Highlighter regex
         .replace(/\b(def|class|if|else|elif|for|while|import|from|return|try|except|finally|with|as|lambda|yield|global|nonlocal|assert|break|continue|pass|raise|del|and|or|not|in|is|True|False|None)\b/g, '<span class="syntax-keyword">$1</span>')
         .replace(/(["'])((?:\\.|(?!\1)[^\\])*?)\1/g, '<span class="syntax-string">$1$2$1</span>')
         .replace(/(#.*$)/gm, '<span class="syntax-comment">$1</span>')
         .replace(/\b(\d+\.?\d*)\b/g, '<span class="syntax-number">$1</span>')
         .replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g, '<span class="syntax-function">$1</span>');
+    }
+
+    // ใช้ library highlight.js แทน
+    function applySyntaxHighlighting() {
+      try {
+        document.querySelectorAll('pre.code-content').forEach((block) => {
+          // ใช้ textContent เพื่อให้แน่ใจว่าเราได้ plain text ก่อน highlight
+          const codeText = block.textContent;
+          block.innerHTML = hljs.highlight(codeText, { language: 'python' }).value;
+        });
+      } catch (e) {
+        console.error('highlight.js error:', e);
+      }
     }
 
     // helper for safe base64 encoding/decoding
@@ -302,6 +327,7 @@
         document.getElementById('post-box').innerHTML = '<p>ไม่พบโพสต์นี้</p>';
         return;
       }
+      
       const { post, codes, pictures } = data;
       let html = `
         <div class="post-header">
@@ -326,13 +352,13 @@
           `</div>`;
       }
 
-      // เก็บ codes ใน global variable แทนการใส่ใน attribute
+      // เก็บ codes ใน global variable โดยไม่ต้องทำความสะอาดที่นี่
       if (codes && codes.length) {
-        window.postCodes = codes; // เก็บไว้ใน global
+        window.postCodes = codes; // เก็บข้อมูลดิบ
+        
         codes.forEach((code, index) => {
           const codeText = code.code || '';
           const lineNumbers = addLineNumbers(codeText);
-          const highlightedCode = highlightSyntax(codeText);
           const lineCount = codeText.split('\n').length;
 
           html += `
@@ -343,7 +369,7 @@
             </div>
             <div class="code-content-wrapper">
               <div class="line-numbers">${lineNumbers}</div>
-              <pre class="code-content">${highlightedCode}</pre>
+              <pre class="code-content">${escapeHtml(codeText)}</pre>
             </div>
             <div class="code-footer">
               <div class="code-output" style="display:none;"></div>
@@ -400,12 +426,12 @@
             comment.codes.forEach((code, codeIndex) => {
               const uniqueId = `comment-${comment.id}-code-${codeIndex}`;
               const codeText = code.code || '';
-              const lineNumbers = addLineNumbers(codeText);
-              const highlightedCode = highlightSyntax(codeText);
-              const lineCount = codeText.split('\n').length;
-
-              // เก็บโค้ดใน global object
+              
+              // เก็บโค้ดดิบ
               window.commentCodes[uniqueId] = codeText;
+
+              const lineNumbers = addLineNumbers(codeText);
+              const lineCount = codeText.split('\n').length;
 
               html += `
               <div class="code-block small-code" data-comment-code-id="${uniqueId}">
@@ -415,7 +441,7 @@
                 </div>
                 <div class="code-content-wrapper">
                   <div class="line-numbers">${lineNumbers}</div>
-                  <pre class="code-content">${highlightedCode}</pre>
+                  <pre class="code-content">${escapeHtml(codeText)}</pre>
                 </div>
                 <div class="code-footer">
                   <div class="code-output" style="display:none;"></div>
@@ -434,6 +460,10 @@
       html += `</div>`;
 
       document.getElementById('post-box').innerHTML = html;
+      // ใส่ highlight หลังจาก DOM พร้อมแล้ว
+      setTimeout(() => {
+        applySyntaxHighlighting();
+      }, 0);
       setupCommentComposer(post.id);
       setupImagePreview(); // เรียกใช้หลังจากเติม HTML เสร็จ
     }
@@ -965,9 +995,7 @@
       if (!postId) return;
 
       const owner = await isOwner(postId);
-      console.log("owner", owner)
       if (owner == false) {
-        console.log(owner)
         return;
       }
 

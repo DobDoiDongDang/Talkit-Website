@@ -30,32 +30,23 @@
     <!-- Main Content: Profile -->
     <main class="main-content">
       <div class="profile-card">
-        <div class="left-section">
-          <div class="avatar-section">
-            <img src="user.png" alt="Avatar" class="avatar" id="avatarPreview">
-            <!-- <img src="../../public/user.png" alt="Avatar" class="avatar" id="avatarPreview"> -->
-            <label for="avatar" class="upload-btn">อัพโหลดรูป</label>
-            <input type="file" id="avatar" accept="image/*">
-          </div>
-          <div class="info-group">
-            <label>ชื่อผู้ใช้:</label>
-            <input type="text" id="username" disabled value="username123">
-            <label>อีเมล:</label>
-            <input type="email" id="email" disabled value="user@example.com">
-          </div>
+        <div class="avatar-section">
+          <img src="user.png" alt="Avatar" class="avatar" id="avatarPreview">
+          <label for="avatar" class="upload-btn">อัพโหลดรูป</label>
+          <input type="file" id="avatar" accept="image/*">
+        </div>
+        <div class="info-group">
+          <label>ชื่อผู้ใช้:</label>
+          <input type="text" id="username" disabled value="username123">
+          <label>อีเมล:</label>
+          <input type="email" id="email" disabled value="user@example.com">
         </div>
 
-        <div class="right-section">
-          <form id="profileForm">
-            <label>รหัสผ่านปัจจุบัน:</label>
-            <input type="password" id="currentPassword">
-            <label>รหัสผ่านใหม่:</label>
-            <input type="password" id="newPassword">
-            <label>ยืนยันรหัสผ่านใหม่:</label>
-            <input type="password" id="confirmPassword">
-            <button type="submit" class="save-btn">บันทึกแก้ไข</button>
-          </form>
-          <button class="logout-btn" id="logoutBtn" onclick="window.location.href='/logout'">ออกจากระบบ</button>
+        <div class="action-buttons">
+            <form id="profileForm" style="width: 100%; padding-bottom: 10px;">
+                <button type="submit" class="save-btn">บันทึกแก้ไข</button>
+            </form>
+            <button class="logout-btn" id="logoutBtn" onclick="window.location.href='/logout'">ออกจากระบบ</button>
         </div>
       </div>
 
