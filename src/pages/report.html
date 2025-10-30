@@ -67,29 +67,44 @@
     // เรียกใช้งานเมื่อโหลดหน้า
     hydrateSidebarProfile();
 
-      let posts = [];
+      let reports = [];
       async function fetchReports() {
         const url = "/reports/all";
         const res = await fetch(url, { credentials: 'include' });
-        posts = await res.json();
+        reports = await res.json();
         renderPosts();
       }
 
       function renderPosts() {
         const container = document.getElementById('posts');
         container.innerHTML = '';
-        posts.forEach(post => {
+        reports.forEach(async report => {
+          let theId;
+          console.log(JSON.stringify(report))
+          if (report.postId == null){
+            console.log(report.commentId)
+            temp = await fetch("/posts/postid/"+report.commentId, { credentials: 'include' });
+            temp = await temp.json()
+            console.log("temp", temp)
+            theId = temp[0].id;
+          }else{
+            theId = report.postId;
+          }
+          console.log("postId", theId)
           const card = document.createElement('div');
           card.className = 'post-card';
+          card.onclick = () => { window.location.href = `/post?id=${theId}`; };
           card.innerHTML = `
-            <div class="post-header">
-            <span class="category">หมวดหมู่ : ${escapeHtml(post.postId ? 'Post': 'comment')}</span>
-            <h2 class="post-content">${escapeHtml(post.description)}</h2>
-            <p>${JSON.stringify(post)}</p>
+            <span class="category">ประเภทของรายงาน : ${escapeHtml(report.postId ? "กระดานสนทนา" : "ความคิดเห็น")}</span>
+            <h2 class="post-content">คำอธิบาย: ${escapeHtml(report.description)}</h2>
+            <br>
+            <h1>เนื้อหา: ${escapeHtml((report.commentText) ? report.commentText : report.postTitle)}</h1>
+            <div class="post-footer"><small>ผู้รายงาน ${report.reporterName} ณ ${report.createdAt}</small></div>
           `;
           container.appendChild(card);
         });
       }
+
       fetchReports()
       function escapeHtml(s) {
         return String(s || '').replace(/[&<>"']/g, function (m) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]); });
