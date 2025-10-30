@@ -271,7 +271,7 @@ resource "aws_instance" "main" {
   # Use your Golden AMI ID
   ami           = "ami-093506617ced6604a"
 
-  instance_type = "t2.micro"
+  instance_type = "t3.medium"
 
   # (ตั้งค่าสำหรับ Debug - Public Subnet + Public IP)
   subnet_id                   = aws_subnet.public_1.id
@@ -326,7 +326,7 @@ resource "aws_db_instance" "talkit_db" {
 
   engine               = "postgres"
   engine_version       = "15"
-  instance_class       = "db.t3.micro"
+  instance_class       = "db.t3.medium"
   allocated_storage    = 20
   storage_type         = "gp2"
   db_name              = "postgres"
