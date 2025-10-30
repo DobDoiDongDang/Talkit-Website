@@ -6,6 +6,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ดูโพสต์ทั้งหมด</title>
   <link rel="stylesheet" href="post.css">
+  <style>
+    /* Small red report button used for posts and comments */
+    .report-btn {
+      background-color: #ef4444; /* red-500 */
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, opacity 0.12s;
+      display: inline-block;
+      line-height: 1;
+    }
+    .report-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+      opacity: 0.95;
+    }
+    .report-btn:active {
+      transform: translateY(0);
+    }
+    /* Report modal styles */
+    .report-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.45);
+      z-index: 1200;
+      padding: 24px;
+      animation: fadeIn 160ms ease;
+    }
+    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+    .report-modal {
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 640px;
+      box-shadow: 0 12px 40px rgba(2,6,23,0.2);
+      padding: 18px 20px;
+      position: relative;
+    }
+    .report-modal h3 { margin: 0 0 8px 0; font-size: 18px; }
+    .report-modal label { display:block; font-size:13px; color:#333; margin-bottom:6px }
+    .report-modal textarea { width:100%; min-height:120px; resize:vertical; padding:10px; border-radius:8px; border:1px solid #e5e7eb; font-size:14px }
+    .report-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px }
+    .report-actions .submit-btn { background:#ef4444; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer }
+    .report-actions .cancel-btn { background:#f3f4f6; color:#111827; border:none; padding:8px 12px; border-radius:8px; cursor:pointer }
+    .report-close { position:absolute; right:10px; top:8px; background:transparent; border:none; font-size:20px; line-height:1; cursor:pointer; color:#6b7280 }
+    .report-close:hover { color:#111827 }
+  </style>
 </head>
 
 <body>
@@ -51,13 +105,15 @@
   </div>
 
   <div class="report-overlay" id="report-overlay" style="display:none;">
-    <div class="report-modal">
-      <h3>Report Request</h3>
-      <label for="report-reason">Reason</label>
+    <div class="report-modal" role="dialog" aria-modal="true" aria-labelledby="report-title">
+      <button class="report-close" aria-label="ปิด">×</button>
+      <h3 id="report-title">รายงานโพสต์ / ความคิดเห็น</h3>
+      <p style="margin:6px 0 12px 0; color:#374151; font-size:14px">กรุณาใส่คำอธิบายสั้น ๆ เพื่อให้ผู้ดูแลระบบพิจารณา</p>
+      <label for="report-reason">รายละเอียด</label>
       <textarea id="report-reason" placeholder="กรอกเหตุผล..."></textarea>
       <div class="report-actions">
-        <button id="report-cancel" class="cancel-btn">Cancel</button>
-        <button id="report-submit" class="submit-btn">Report</button>
+        <button id="report-cancel" class="cancel-btn">ยกเลิก</button>
+        <button id="report-submit" class="submit-btn">ส่งรายงาน</button>
       </div>
     </div>
   </div>
@@ -326,7 +382,7 @@
             <div class="comment-content">
               <h5>${escapeHtml(comment.username || 'Anon')}</h5>
               <p>${escapeHtml(comment.text)}</p>
-              <button onclick='openReportPopup("comment", ${comment.id})'>รายงาน</button>
+              <button class="report-btn" onclick='openReportPopup("comment", ${comment.id})'>รายงาน</button>
           `;
 
           if (comment.pictures && comment.pictures.length) {
@@ -817,15 +873,39 @@
 
     async function openReportPopup(type, id = null) {
       const overlay = document.getElementById('report-overlay');
+      const modal = overlay.querySelector('.report-modal');
+      const closeBtn = modal.querySelector('.report-close');
       const cancelBtn = document.getElementById('report-cancel');
       const submitBtn = document.getElementById('report-submit');
       const reason = document.getElementById('report-reason');
 
       // ดึง ID จากระบบ (แล้วแต่คุณจะใช้ post หรือ comment)
       const targetId = type == "post" ? getPostId() : id; // สมมติใช้ฟังก์ชันนี้ดึง ID
+      reason.value = '';
       overlay.style.display = 'flex';
 
-      cancelBtn.onclick = () => (overlay.style.display = 'none');
+      // focus the textarea for accessibility
+      setTimeout(() => { try { reason.focus(); } catch {} }, 50);
+
+      const close = () => {
+        overlay.style.display = 'none';
+        // cleanup listeners
+        closeBtn.removeEventListener('click', close);
+        overlay.removeEventListener('click', onOverlayClick);
+        document.removeEventListener('keydown', onKeyDown);
+        cancelBtn.onclick = null;
+        submitBtn.onclick = null;
+      };
+
+      cancelBtn.onclick = () => close();
+
+      const onOverlayClick = (e) => { if (e.target === overlay) close(); };
+      overlay.addEventListener('click', onOverlayClick);
+
+      const onKeyDown = (e) => { if (e.key === 'Escape') close(); };
+      document.addEventListener('keydown', onKeyDown);
+
+      closeBtn.addEventListener('click', close);
 
       submitBtn.onclick = async () => {
         const description = reason.value.trim();
@@ -852,6 +932,7 @@
               [type === 'post' ? 'postId' : 'commentId']: targetId,
               description
             }),
+            credentials: 'include'
           });
 
           const result = await response.json();
@@ -862,7 +943,7 @@
           }
 
           alert(result.message || 'รายงานถูกส่งเรียบร้อยแล้ว');
-          overlay.style.display = 'none';
+          close();
           reason.value = ''; // เคลียร์ข้อความ
         } catch (err) {
           console.error('Report request error:', err);
